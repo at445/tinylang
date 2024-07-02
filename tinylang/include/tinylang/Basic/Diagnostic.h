@@ -59,31 +59,19 @@ namespace tinylang {
       SrcMgr.PrintMessage(Loc, Kind, Msg);
       NumErrors += (Kind == SourceMgr::DK_Error);
     }
+
+    template <typename... Args>
+    void report(raw_ostream &OS, SMLoc Loc, diag::DIAG_ID DiagID, Args &&... Arguments) {
+      auto text = getDiagnosticText(DiagID);
+      std::string Msg =llvm::formatv(text, std::forward<Args>(Arguments)...).str();
+      SourceMgr::DiagKind Kind = getDiagnosticKind(DiagID);
+      SrcMgr.PrintMessage(OS, Loc, Kind, Msg);
+      NumErrors += (Kind == SourceMgr::DK_Error);
+    }
   private:
     SourceMgr &SrcMgr;
     unsigned NumErrors;
   };
 } // namespace tinylang
-/*
-  how to use:
 
-
-  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(fileName);
-  
-  if (std::error_code BufferError = FileOrErr.getError()) {
-    llvm::errs() << "Error reading " << fileName << ": " << BufferError.message() << "\n";
-    return 1;
-  }
-
-  llvm::SourceMgr SrcMgr;
-  DiagnosticsEngine Diags(SrcMgr);
-
-  // Tell SrcMgr about this buffer, which is what the
-  // parser will pick up.
-  SrcMgr.AddNewSourceBuffer(std::move(*FileOrErr), llvm::SMLoc());
-
-  auto CurBuf = SrcMgr.getMemoryBuffer(SrcMgr.getMainFileID())->getBufferStart();
-
-  Diags.report(SMLoc::getFromPointer(CurBuf+2), diag::err_symbold_declared, "chen", "jinsong");
-*/
 #endif

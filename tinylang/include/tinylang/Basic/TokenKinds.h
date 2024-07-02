@@ -7,7 +7,7 @@ namespace tinylang {
 
 namespace tok {
   enum TokenKind : unsigned short {
-    unknown,
+    unknown = 0,
     eof,
     
     identifier,          // abcde123
@@ -33,7 +33,8 @@ namespace tok {
     l_paren,      
     r_paren,      
 
-    kw_AND,     
+    KW_ENUM_START,
+    kw_AND = KW_ENUM_START,     
     kw_BEGIN,
     kw_CONST,
     kw_DIV,  
@@ -52,6 +53,7 @@ namespace tok {
     kw_THEN, 
     kw_VAR,  
     kw_WHILE,
+    KW_ENUM_END = kw_WHILE,
 
     MAX_TOKENS_NUM,
   };
