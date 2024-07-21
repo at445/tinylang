@@ -73,7 +73,7 @@ void Lexer::formToken(Token &Result, const char *TokEnd, tok::TokenKind Kind)
 
 void Lexer::next(Token &Result) {
     while (*CurPtr && charinfo::isWhitespace(*CurPtr)) ++CurPtr;
- 
+    
     if(*CurPtr == '\0') {
         Result.setKind(tok::TokenKind::eof);
         return;

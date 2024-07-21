@@ -89,7 +89,7 @@ Token type: 10 name: period  .\n\
 Token type: 1 name: eof  \n";
 
 TEST(DiagnosticTest, lexerTest) {
-  auto fileName = GetDirectoryName(__FILE__) + "Gcd.txt";
+  auto fileName = GetDirectoryName(__FILE__) + "input/Gcd.txt";
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(fileName);
   
   if (std::error_code BufferError = FileOrErr.getError()) {

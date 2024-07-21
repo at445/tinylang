@@ -19,6 +19,7 @@ namespace tinylang {
     };
     
     class Lexer {
+    private:
         SourceMgr &SrcMgr;
         DiagnosticsEngine &Diags;
 
@@ -31,7 +32,7 @@ namespace tinylang {
 
         KeywordFilter Keywords;
 
-        public:
+    public:
         Lexer(SourceMgr &SrcMgr, DiagnosticsEngine &Diags)
             : SrcMgr(SrcMgr), Diags(Diags) {
             CurBuffer = SrcMgr.getMainFileID();
@@ -47,19 +48,19 @@ namespace tinylang {
         /// Returns the next token from the input.
         void next(Token &Result);
 
-        private:
+        
+        SMLoc getLoc() { return SMLoc::getFromPointer(CurPtr); }
+
+    private:
         void identifierOrKeyword(Token &Result);
         void number(Token &Result);
         void string(Token &Result);
         void comment();
-
         void consume(void) {
             CurPtr++;
         }
 
         bool speculateNumber(void);
-
-        SMLoc getLoc() { return SMLoc::getFromPointer(CurPtr); }
 
         void formToken(Token &Result, const char *TokEnd, tok::TokenKind Kind);
     };  

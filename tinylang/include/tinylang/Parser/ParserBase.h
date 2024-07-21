@@ -11,8 +11,8 @@
 namespace tinylang {
     class ParserBase {
     public:
-        ParserBase(Lexer &lexer) 
-            :lex(lexer), curIdx(0){
+        ParserBase(Lexer &lexer, DiagnosticsEngine &diag) 
+            :lex(lexer), curIdx(0), diags(diag){
             sync(1);
         }
     protected:
@@ -20,16 +20,18 @@ namespace tinylang {
              return LookAhead(offset).getKind(); 
         }
 
-        // return: this error happened during parsering
         bool consume(tok::TokenKind ExpectedTok) {
-            if (LookAheadTyp() == ExpectedTok) {
-                consume();
+            if (!expect(ExpectedTok)) {
                 return false;
             }
+            advance();
             return true;
         }
 
-        void consume() {
+        inline void advance() {
+            if (isParserProcess()) {
+                llvm::outs() << lookahead[curIdx];
+            }
             curIdx++;
             if (isParserProcess() && curIdx == lookahead.size()) {
                 curIdx = 0;
@@ -39,9 +41,17 @@ namespace tinylang {
             sync(1);
         }
 
+        inline bool expect(tok::TokenKind ExpectedTok) {
+            if (curToken().getKind() != ExpectedTok) {
+                errorReport(ExpectedTok, curToken().getKind());
+                return false;
+            }
+            return true;
+        }
+
 
         // 从缓冲区中获取当前解析或者分析token的第i个后面的token
-        const Token& LookAhead(int offset) { 
+        const Token& LookAhead(int offset = 1) { 
             sync(offset); 
             return lookahead[curIdx+offset-1]; 
         }
@@ -58,6 +68,9 @@ namespace tinylang {
 
         inline void seek(int idx) {
             curIdx = idx;
+        }
+        inline const Token& curToken() {
+            return lookahead[curIdx];
         }
 
         bool isPositionSpeculated(llvm::DenseMap<int, int>& memoization, int idx) {
@@ -93,6 +106,18 @@ namespace tinylang {
         inline bool isParserProcess() { 
             return markers.empty(); 
         }
+        void errorReport(tok::TokenKind ExpectedTok, tok::TokenKind actualTok) {
+            auto ExpctSpel = tok::getSpelling(ExpectedTok);
+            auto expectStr = (ExpctSpel == nullptr) ? 
+                                tok::getTokenName(ExpectedTok) : ExpctSpel;
+            
+            auto ActualSpelling = tok::getSpelling(actualTok);
+            auto actualStr = (ActualSpelling == nullptr) ? 
+                                tok::getTokenName(actualTok) : ActualSpelling;
+
+            diags.report(curToken().getLocation(), 
+                            diag::err_expected, expectStr, actualStr);
+        }
     private:
         int curIdx;
         SmallVector<Token, 10> lookahead;
@@ -102,6 +127,8 @@ namespace tinylang {
         SmallVector<int, 10> markers;
 
         Lexer& lex;
+
+        DiagnosticsEngine &diags;
         
     };
 }

@@ -67,7 +67,6 @@ const char *tok::getTokenName(TokenKind Kind) {
 
 const char *tok::getSpelling(TokenKind Kind){
   if (Kind < MAX_TOKENS_NUM) {
-    if (tokenContent[Kind].spell == nullptr) return "";
     return tokenContent[Kind].spell;
   }
   llvm_unreachable("unknown TokenKind");

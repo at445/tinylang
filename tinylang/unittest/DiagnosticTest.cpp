@@ -17,7 +17,7 @@ std::string GetDirectoryName(std::string path){
 }
 
 TEST(DiagnosticTest, test1) {
-  auto fileName = std::string(TEST_CASE_DIRECTORY) + "Input.txt";
+  auto fileName = std::string(TEST_CASE_DIRECTORY) + "input/Input.txt";
   llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(fileName);
   
   if (std::error_code BufferError = FileOrErr.getError()) {

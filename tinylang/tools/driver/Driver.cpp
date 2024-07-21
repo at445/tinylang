@@ -1,26 +1,36 @@
 #include "tinylang/Basic/Diagnostic.h"
 #include "tinylang/Basic/Version.h"
 #include "tinylang/Basic/TokenKinds.h"
+#include "tinylang/Lexer/Lexer.h"
+#include "tinylang/Parser/TinylangParser.h"
 #include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/raw_ostream.h"
-#include <iostream>
+
 using namespace tinylang;
+
 std::string fileName = "/home/jasson/Practice/tinylang/Gcd.mod";
 int main(int argc_, const char **argv_) {
   llvm::InitLLVM X(argc_, argv_);
-  // // llvm::SmallVector<const char *, 256> argv(argv_ + 1,
-  // //                                           argv_ + argc_);
+
   llvm::outs() << "Tinylang version is " << tinylang::getTinylangVersion() << "\n\n";
 
-
-  for (size_t i = 0; i < tok::MAX_TOKENS_NUM; i++)
-  {
-    auto spelling = tok::getSpelling(static_cast<tok::TokenKind>(i));
-    std::cout << tok::getTokenName(static_cast<tok::TokenKind>(i)) << " :" << spelling << "\n";
+  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(fileName);
+  
+  if (std::error_code BufferError = FileOrErr.getError()) {
+    llvm::errs() << "Error reading " << "Gcd.txt" << ": " << BufferError.message() << "\n";
+    return -1;
   }
-  
 
-  
-  
+  llvm::SourceMgr srcMgr;
+  DiagnosticsEngine diags(srcMgr);
+
+  // Tell SrcMgr about this buffer, which is what the
+  // parser will pick up.
+  srcMgr.AddNewSourceBuffer(std::move(*FileOrErr), llvm::SMLoc());
+
+  Lexer lexer(srcMgr, diags);
+
+  Parser parser(lexer, diags);
+
+  parser.parseCompilationUnit();
   return 0;
 }

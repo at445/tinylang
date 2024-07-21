@@ -4,10 +4,16 @@
 #include "tinylang/Parser/ParserBase.h"
 
 namespace tinylang {
-    class Paser : public ParserBase {
+    class Parser : public ParserBase {
+    public:
         void clearMemo(void) override {
             memoization.clear();
         }
+        Parser(Lexer &lexer, DiagnosticsEngine & diag) 
+            :ParserBase(lexer, diag){}
+
+        bool parseCompilationUnit(void);
+
     private:
         // Structure for speculation
         // key: start Position among buffer
@@ -16,7 +22,8 @@ namespace tinylang {
         //          if this is -1, means speculate process is usless
         llvm::DenseMap<int, int> memoization;
 
-        bool parseCompilationUnit(void);
+        bool parseImport(void);
+        bool parseIdentList(void);
     };
 }
 #endif
