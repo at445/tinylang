@@ -11,6 +11,7 @@ namespace {
     {/*diag::err_unterminated_block_comment,                 */ SourceMgr::DK_Error, "unterminated (* comment"},
     {/*diag::err_unterminated_char_or_string,                */ SourceMgr::DK_Error, "missing terminating character"},
     {/*diag::err_hex_digit_in_decimal,                       */ SourceMgr::DK_Error, "decimal number contains hex digit"},
+    {/*diag::err_unknow_token,                               */ SourceMgr::DK_Error, "cannot decide the token type"},
 
     {/*diag::err_expected,                                   */ SourceMgr::DK_Error, "expected {0} but found {1}"},
     {/*diag::err_module_identifier_not_equal,                */ SourceMgr::DK_Error, "module identifier at begin and end not equal"},

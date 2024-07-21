@@ -10,6 +10,7 @@ class SourceMgr;
 template <typename T, typename A> class StringMap;
 class StringRef;
 class raw_ostream;
+template <typename T, unsigned N> class SmallVector;
 } // namespace llvm
 
 namespace tinylang {
@@ -24,6 +25,8 @@ using llvm::SMLoc;
 using llvm::SourceMgr;
 using llvm::StringMap;
 using llvm::StringRef;
+using llvm::SmallVector;
 } // namespace tinylang
 
+#define FAILED -1
 #endif

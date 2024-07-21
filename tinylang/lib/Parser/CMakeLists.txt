@@ -1,8 +1,7 @@
 set(LLVM_LINK_COMPONENTS support)
 
-add_tinylang_library(tinylangLexer
-  Lexer.cpp
-  Token.cpp
+add_tinylang_library(tinylangParser
+  TinylangParser.cpp
 
   LINK_LIBS
   tinylangBasic

@@ -15,6 +15,7 @@ namespace tinylang {
       err_unterminated_block_comment,
       err_unterminated_char_or_string,
       err_hex_digit_in_decimal,
+      err_unknow_token,
 
       err_expected,
       err_module_identifier_not_equal,
