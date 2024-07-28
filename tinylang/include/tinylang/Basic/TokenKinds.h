@@ -52,7 +52,6 @@ namespace tok {
     kw_RETURN,   
     kw_THEN, 
     kw_VAR,
-    kw_INTEGER,
     kw_WHILE,
     KW_ENUM_END = kw_WHILE,
 

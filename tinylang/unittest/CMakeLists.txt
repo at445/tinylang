@@ -6,7 +6,9 @@ enable_testing()
 add_executable(${PROJECT_NAME} 
                 main.cpp
                 DiagnosticTest.cpp
-                LexerTest.cpp)
+                LexerTest.cpp
+                ParseTest.cpp
+                )
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     gmock 
@@ -14,6 +16,7 @@ target_link_libraries(${PROJECT_NAME}
     pthread
     tinylangBasic
     tinylangLexer
+    tinylangParser
     ${LLVM_COMMON_LIBS}
     )
 

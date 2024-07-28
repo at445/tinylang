@@ -17,7 +17,7 @@ TEST(LexerTest, Keywords) {
         auto ret = fliter.getKeyWords(name, tok::identifier);
         ss << ret;
     }
-    EXPECT_STREQ("22222222222222222222222223242526272829303132333435363738394041", ss.str().c_str());
+    EXPECT_STREQ("222222222222222222222222232425262728293031323334353637383940", ss.str().c_str());
 }
 
 std::string expectRet = "Token type: 33 name: MODULE  \n\
@@ -26,7 +26,7 @@ Token type: 12 name: semi  ;\n\
 Token type: 39 name: VAR  \n\
 Token type: 2 name: identifier  x  \n\
 Token type: 13 name: colon  :\n\
-Token type: 40 name: INTEGER  \n\
+Token type: 2 name: identifier  INTEGER  \n\
 Token type: 12 name: semi  ;\n\
 Token type: 36 name: PROCEDURE  \n\
 Token type: 2 name: identifier  GCD  \n\
@@ -35,15 +35,15 @@ Token type: 2 name: identifier  a  \n\
 Token type: 11 name: comma  ,\n\
 Token type: 2 name: identifier  b  \n\
 Token type: 13 name: colon  :\n\
-Token type: 40 name: INTEGER  \n\
+Token type: 2 name: identifier  INTEGER  \n\
 Token type: 21 name: r_paren  )\n\
 Token type: 13 name: colon  :\n\
-Token type: 40 name: INTEGER  \n\
+Token type: 2 name: identifier  INTEGER  \n\
 Token type: 12 name: semi  ;\n\
 Token type: 39 name: VAR  \n\
 Token type: 2 name: identifier  t  \n\
 Token type: 13 name: colon  :\n\
-Token type: 40 name: INTEGER  \n\
+Token type: 2 name: identifier  INTEGER  \n\
 Token type: 12 name: semi  ;\n\
 Token type: 23 name: BEGIN  \n\
 Token type: 30 name: IF  \n\
@@ -56,7 +56,7 @@ Token type: 2 name: identifier  a  \n\
 Token type: 12 name: semi  ;\n\
 Token type: 27 name: END  \n\
 Token type: 12 name: semi  ;\n\
-Token type: 41 name: WHILE  \n\
+Token type: 40 name: WHILE  \n\
 Token type: 2 name: identifier  b  \n\
 Token type: 15 name: hash  #\n\
 Token type: 3 name: integer_literal  0  \n\

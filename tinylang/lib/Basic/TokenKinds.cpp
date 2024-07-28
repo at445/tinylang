@@ -53,7 +53,6 @@ namespace {
     { /*tok::kw_RETURN,        */ "RETURN", nullptr},  
     { /*tok::kw_THEN,          */ "THEN", nullptr},
     { /*tok::kw_VAR,           */ "VAR", nullptr},
-    { /*tok::kw_INTEGER,       */ "INTEGER", nullptr},
     { /*tok::kw_WHILE,         */ "WHILE", nullptr},
   };
 }

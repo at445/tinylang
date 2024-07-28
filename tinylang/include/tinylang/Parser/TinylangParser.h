@@ -24,6 +24,33 @@ namespace tinylang {
 
         bool parseImport(void);
         bool parseIdentList(void);
+
+        bool parseBlock(void);
+
+        bool parseDeclaration();
+        bool parseConstantDeclaration();
+        bool parseVariableDeclaration();
+        bool parseProcedureDeclaration();
+
+        bool parseStatement();
+        bool parseActualParams();
+
+        bool parseExpression();
+        bool parseprefixedExpression();
+        bool parseTerm();
+        bool parseFactor();
+        
+        bool parseExpressionList();
+        bool parseIfStatement();
+        bool parseWhileStatement();
+        bool parseReturnStatement();
+        bool parseFormalParameter();
+        bool parseFormalParameterList();
+        bool parseFormalParameters();
+
+
+        bool parseStatementSequence();
+        bool parseQualident(void);
     };
 }
 #endif

@@ -211,7 +211,7 @@ void tinylang::Lexer::number(Token &Result)
 {
     bool isHex = false;
 
-    auto endPtr = CurPtr + 1;
+    auto endPtr = CurPtr;
     while(*endPtr != '\0' && (charinfo::isDigit(*endPtr) || charinfo::isHexDigit(*endPtr))) {
         if (charinfo::isHexDigit(*endPtr)) isHex = true;
         endPtr++;
