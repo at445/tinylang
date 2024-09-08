@@ -1,36 +1,32 @@
 #ifndef TINYLANG_PARSER_H
 #define TINYLANG_PARSER_H
 
+#include "tinylang/AST/AST.h"
+#include "tinylang/Sema/Sema.h"
 #include "tinylang/Parser/ParserBase.h"
 
 namespace tinylang {
     class Parser : public ParserBase {
+        Sema &Semantic;
     public:
         void clearMemo(void) override {
-            memoization.clear();
         }
-        Parser(Lexer &lexer, DiagnosticsEngine & diag) 
-            :ParserBase(lexer, diag){}
+        Parser(Lexer &lexer, Sema &semantic, DiagnosticsEngine & diag) 
+            :ParserBase(lexer, diag),
+            Semantic(semantic){};
 
         bool parseCompilationUnit(void);
 
     private:
-        // Structure for speculation
-        // key: start Position among buffer
-        // value: end Position among buffer 
-        //          means how far the speculation has reached
-        //          if this is -1, means speculate process is usless
-        llvm::DenseMap<int, int> memoization;
-
         bool parseImport(void);
-        bool parseIdentList(void);
+        bool parseIdentList(IdentList&);
 
-        bool parseBlock(void);
+        bool parseBlock(DeclList&, StmtList&);
 
-        bool parseDeclaration();
-        bool parseConstantDeclaration();
-        bool parseVariableDeclaration();
-        bool parseProcedureDeclaration();
+        bool parseDeclaration(DeclList& decls);
+        bool parseConstantDeclaration(DeclList& decls);
+        bool parseVariableDeclaration(DeclList& decls);
+        bool parseProcedureDeclaration(DeclList& decls);
 
         bool parseStatement();
         bool parseActualParams();
@@ -38,7 +34,7 @@ namespace tinylang {
         bool parseExpression();
         bool parseprefixedExpression();
         bool parseTerm();
-        bool parseFactor();
+        bool parseFactor(Expr *&E);
         
         bool parseExpressionList();
         bool parseIfStatement();
@@ -50,7 +46,7 @@ namespace tinylang {
 
 
         bool parseStatementSequence();
-        bool parseQualident(void);
+        bool parseQualident(Decl *&D, SMLoc& lastLoc);
     };
 }
 #endif

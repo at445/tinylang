@@ -17,6 +17,7 @@ target_link_libraries(${PROJECT_NAME}
     tinylangBasic
     tinylangLexer
     tinylangParser
+    tinylangSema
     ${LLVM_COMMON_LIBS}
     )
 

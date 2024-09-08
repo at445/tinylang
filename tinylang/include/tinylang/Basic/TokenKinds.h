@@ -21,11 +21,11 @@ namespace tok {
     slash,        
     colonequal,   
     period,       
-    comma,        
+    comma,        //,
     semi,         
     colon,        
     equal,        
-    hash,         
+    hash,       //#  
     less,         
     greater,      
     lessequal,    

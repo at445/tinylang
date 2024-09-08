@@ -12,7 +12,7 @@ namespace tinylang {
     class ParserBase {
     public:
         ParserBase(Lexer &lexer, DiagnosticsEngine &diag) 
-            :lex(lexer), curIdx(0), diags(diag){
+            : curIdx(0), lex(lexer), diags(diag){
             sync(1);
         }
     protected:
@@ -29,9 +29,9 @@ namespace tinylang {
         }
 
         inline void advance() {
-            if (isParserProcess()) {
-                llvm::outs() << lookahead[curIdx];
-            }
+            // if (isParserProcess()) {
+            //     llvm::outs() << lookahead[curIdx];
+            // }
             curIdx++;
             if (isParserProcess() && curIdx == lookahead.size()) {
                 curIdx = 0;
@@ -89,7 +89,7 @@ namespace tinylang {
         // Make sure we have i tokens from current position p
         // prefretch several token to lookahead member from lexer if it is not enough
         void sync(int i) {
-            auto fetchNumber = curIdx + i - lookahead.size();
+            int fetchNumber = curIdx + i - lookahead.size();
             for (int i = 0; i<fetchNumber; ++i) {
                 Token tok;
                 lex.next(tok);
@@ -119,7 +119,7 @@ namespace tinylang {
                             diag::err_expected, expectStr, actualStr);
         }
     private:
-        int curIdx;
+        size_t curIdx;
         SmallVector<Token, 10> lookahead;
 
         // Structure for speculation, stack of speculate branch
@@ -127,7 +127,7 @@ namespace tinylang {
         SmallVector<int, 10> markers;
 
         Lexer& lex;
-
+    protected:
         DiagnosticsEngine &diags;
         
     };

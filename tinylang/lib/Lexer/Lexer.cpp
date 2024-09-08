@@ -118,7 +118,11 @@ void Lexer::next(Token &Result) {
         formToken(Result, CurPtr+1, tok::equal);
         break;
     case '#':
-        formToken(Result, CurPtr+1, tok::hash);
+        while(*CurPtr != '\n') {
+            CurPtr++;
+        }
+        next(Result);
+        // formToken(Result, CurPtr+1, tok::hash);
         break;
     case ')':
         formToken(Result, CurPtr+1, tok::r_paren);

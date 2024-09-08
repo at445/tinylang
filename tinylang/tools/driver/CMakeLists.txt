@@ -11,5 +11,5 @@ target_link_libraries(tinylang
   tinylangBasic
   tinylangLexer
   tinylangParser
-  # tinylangSema
+  tinylangSema
   )

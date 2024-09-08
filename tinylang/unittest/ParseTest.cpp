@@ -23,9 +23,11 @@ TEST(ParseTest, parseTest) {
   // parser will pick up.
   SrcMgr.AddNewSourceBuffer(std::move(*FileOrErr), llvm::SMLoc());
 
-  Lexer lexer(SrcMgr, Diags);
+  auto lexer = Lexer(SrcMgr, Diags);
 
-  Parser parser(lexer, Diags);
+  auto sema = Sema(Diags);
+
+  Parser parser(lexer, sema, Diags);
 
   EXPECT_TRUE(parser.parseCompilationUnit());
 }

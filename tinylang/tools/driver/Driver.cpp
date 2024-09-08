@@ -27,10 +27,11 @@ int main(int argc_, const char **argv_) {
   // parser will pick up.
   srcMgr.AddNewSourceBuffer(std::move(*FileOrErr), llvm::SMLoc());
 
-  Lexer lexer(srcMgr, diags);
+  auto lexer = Lexer(srcMgr, diags);
 
-  Parser parser(lexer, diags);
+  auto sema = Sema(diags);
 
-  parser.parseCompilationUnit();
-  return 0;
+  Parser parser(lexer, sema, diags);
+
+  return parser.parseCompilationUnit();
 }

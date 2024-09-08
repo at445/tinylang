@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.4.3)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(Tinylang)
 
@@ -33,6 +34,7 @@ include_directories(BEFORE
   ${CMAKE_CURRENT_BINARY_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
+
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(unittest)
