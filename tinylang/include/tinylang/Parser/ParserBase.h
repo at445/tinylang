@@ -29,9 +29,9 @@ namespace tinylang {
         }
 
         inline void advance() {
-            // if (isParserProcess()) {
-            //     llvm::outs() << lookahead[curIdx];
-            // }
+            if (isParserProcess()) {
+                llvm::outs() << lookahead[curIdx];
+            }
             curIdx++;
             if (isParserProcess() && curIdx == lookahead.size()) {
                 curIdx = 0;

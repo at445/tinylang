@@ -1,6 +1,5 @@
 #include "tinylang/Parser/TinylangParser.h"
 
-
 bool tinylang::Parser::parseCompilationUnit(void)
 {
     if (!consume(tok::kw_MODULE)) {
@@ -55,70 +54,97 @@ bool tinylang::Parser::parseBlock(DeclList& decls, StmtList& stmts) {
 bool tinylang::Parser::parseConstantDeclaration(DeclList& decls)
 {
     while (curToken().is(tok::identifier)) {
+        auto loc = curToken().getLocation();
+        auto name = curToken().getIdentifier();
         advance();
         if (!consume(tok::equal)) return false;
-
-        if (!parseExpression()) return false;
+        Expr * expr = nullptr; 
+        if (!parseExpression(expr)) return false;
 
         if (!consume(tok::semi)) return false;
+        auto stmt = Semantic.actOnConstantDecl(loc, name, expr);
+        decls.push_back(stmt);
     }
     return true;
 }
 
-bool tinylang::Parser::parseExpression()
+bool tinylang::Parser::parseExpression(Expr *&E)
 {
-    if (!parseprefixedExpression()) return false;
+    Expr * p = nullptr;
+    if (!parseprefixedExpression(E)) return false;
 
     if(curToken().isOneOf(tok::equal, tok::hash, tok::less,
         tok::lessequal,tok::greater,tok::greaterequal)) {
             advance();
-            if (!parseprefixedExpression()) return false;    
+            if (!parseprefixedExpression(p)) return false;    
     }
     return true;
 }
-bool tinylang::Parser::parseprefixedExpression() {
-    if (curToken().isOneOf(tok::plus, tok::minus)) {
-        advance();
-    }
-
-    if (!parseTerm()) return false;
+bool tinylang::Parser::parseSimpleExpression(Expr *&E) {
+    if (!parseTerm(E)) return false;
 
     while (curToken().isOneOf(tok::plus, tok::minus, tok::kw_OR)) {
+        auto op = generateOp();
         advance();
-
-        if (!parseTerm()) return false;
+        Expr * rExpr = nullptr;
+        if (!parseTerm(rExpr)) return false; 
+        Semantic.actOnSimpleExpr(E, E, rExpr, op);
     }
     return true;
 }
-
-bool tinylang::Parser::parseTerm()
-{
-    Expr* expr = nullptr;
-    if (!parseFactor(expr)) return false;
-
-    if (curToken().isOneOf(tok::star, tok::slash, tok::kw_AND,
-                       tok::kw_DIV, tok::kw_MOD)) {
+bool tinylang::Parser::parseprefixedExpression(Expr *&E) {
+    bool isMinus = false;
+    if (curToken().is(tok::plus)) {
         advance();
-
-        if (!parseFactor(expr)) return false;
     }
-    return true;
+
+    tinylang::OperatorInfo op;
+    if (curToken().is(tok::minus)) {
+        isMinus = true;
+        op = std::move(generateOp());
+        advance();
+    }
+    auto ret = parseSimpleExpression(E);
+
+    if(ret && isMinus) {
+        E = Semantic.actOnPrefixedExpr(E, op);
+    }
+    
+    return ret;
+}
+
+bool tinylang::Parser::parseTerm(Expr *&E)
+{
+   
+    if (!parseFactor(E)) return false;
+
+    if (!curToken().isOneOf(tok::star, tok::slash, tok::kw_AND,
+                       tok::kw_DIV, tok::kw_MOD)) {
+                        return true;
+    }
+    auto op = generateOp();
+    advance();
+    Expr* rExpr = nullptr;
+    if (!parseTerm(rExpr)) return false;
+    return Semantic.actOnTerm(E, E, rExpr, op);
 }
 bool tinylang::Parser::parseFactor(Expr *&E)
 {
     if (curToken().is(tok::integer_literal)) {
-        E = Semantic.actOnIntegerLiteral(
-            curToken().getLocation(),
-            curToken().getIdentifier()
-        );
+
+        Token tok = curToken();
+        
+        SMLoc loc = tok.getLocation();
+        StringRef val = tok.getLiteralData();
+        E = Semantic.actOnIntegerLiteral(loc, val);
         advance();
         return true;
     }
 
     if (curToken().is(tok::l_paren)) {
         advance();
-
-        if (!parseExpression()) return false;
+        Expr * p = nullptr; //dummy
+        if (!parseExpression(p)) return false;
 
         if (!consume(tok::r_paren)) return false;
         return true;
@@ -142,12 +168,13 @@ bool tinylang::Parser::parseFactor(Expr *&E)
     return true;
 }
 bool tinylang::Parser::parseExpressionList() {
-    if (!parseExpression()) return false;
+    Expr * p = nullptr; //dummy
+    if (!parseExpression(p)) return false;
 
     while(curToken().is(tok::comma)) {
         advance();
 
-        if (!parseExpression()) return false;
+        if (!parseExpression(p)) return false;
     }
 
     return true;
@@ -236,7 +263,8 @@ bool tinylang::Parser::parseStatement()
 
         if (curToken().is(tok::colonequal)) {
             advance();
-            if (!parseExpression()) return false;
+            Expr * p = nullptr; //dummy
+            if (!parseExpression(p)) return false;
         } else {
             if (!parseActualParams()) return false;
         }
@@ -262,7 +290,8 @@ bool tinylang::Parser::parseIfStatement() {
     if (!consume(tok::kw_IF)) {
         return false;
     }
-    if (!parseExpression()) return false;
+    Expr * p = nullptr; //dummy
+    if (!parseExpression(p)) return false;
 
     if (!consume(tok::kw_THEN)) {
         return false;
@@ -286,7 +315,8 @@ bool tinylang::Parser::parseWhileStatement()
     if (!consume(tok::kw_WHILE)) {
         return false;
     }
-    if (!parseExpression()) return false;
+    Expr * p = nullptr; //dummy
+    if (!parseExpression(p)) return false;
 
     if (!consume(tok::kw_DO)) {
         return false;
@@ -305,7 +335,8 @@ bool tinylang::Parser::parseReturnStatement()
         return false;
     }
     if (!curToken().is(tok::semi)) {
-        return parseExpression();
+        Expr * p = nullptr; //dummy
+        return parseExpression(p);
     }
     return true;
 }
@@ -449,4 +480,11 @@ bool tinylang::Parser::parseQualident(Decl *&D, SMLoc& lastLoc)
 
     
     return true;
+}
+
+tinylang::OperatorInfo tinylang::Parser::generateOp()
+{
+    tinylang::OperatorInfo op(curToken().getLocation(),
+                        curToken().getKind());
+    return op;
 }

@@ -169,7 +169,7 @@ namespace tinylang {
     }
   };
 
-
+  
   class BooleanLiteral : public Expr {
     bool Value;
 
@@ -202,22 +202,52 @@ namespace tinylang {
   class OperatorInfo {
     SMLoc Loc;
     uint32_t Kind : 16;
-    uint32_t IsUnspecified : 1;
 
   public:
     OperatorInfo()
-        : Loc(), Kind(tok::unknown), IsUnspecified(true) {}
-    OperatorInfo(SMLoc Loc, tok::TokenKind Kind,
-                bool IsUnspecified = false)
-        : Loc(Loc), Kind(Kind), IsUnspecified(IsUnspecified) {
+        : Loc(), Kind(tok::unknown) {}
+    OperatorInfo(SMLoc Loc, tok::TokenKind Kind)
+        : Loc(Loc), Kind(Kind) {
     }
 
     SMLoc getLocation() const { return Loc; }
     tok::TokenKind getKind() const {
       return static_cast<tok::TokenKind>(Kind);
     }
-    bool isUnspecified() const { return IsUnspecified; }
   };
+  class InfixExpression : public Expr {
+    Expr *Left;
+    Expr *Right;
+    const OperatorInfo Op;
 
+    public:
+      InfixExpression(Expr *Left, Expr *Right, OperatorInfo Op,
+                      TypeDeclaration *Ty, bool IsConst)
+          : Expr(EK_Infix, Ty, IsConst), Left(Left),
+            Right(Right), Op(Op) {}
 
+      Expr *getLeft() { return Left; }
+      Expr *getRight() { return Right; }
+      const OperatorInfo &getOperatorInfo() { return Op; }
+
+      static bool classof(const Expr *E) {
+        return E->getKind() == EK_Infix;
+      }
+  };
+  class PrefixExpression : public Expr {
+    Expr *E;
+    const OperatorInfo Op;
+
+  public:
+    PrefixExpression(Expr *E, OperatorInfo Op,
+                    TypeDeclaration *Ty, bool IsConst)
+        : Expr(EK_Prefix, Ty, IsConst), E(E), Op(Op) {}
+
+    Expr *getExpr() { return E; }
+    const OperatorInfo &getOperatorInfo() { return Op; }
+
+    static bool classof(const Expr *E) {
+      return E->getKind() == EK_Prefix;
+    }
+  };
 }

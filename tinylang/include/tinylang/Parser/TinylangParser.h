@@ -31,9 +31,10 @@ namespace tinylang {
         bool parseStatement();
         bool parseActualParams();
 
-        bool parseExpression();
-        bool parseprefixedExpression();
-        bool parseTerm();
+        bool parseExpression(Expr *&E);
+        bool parseSimpleExpression(Expr *&E);
+        bool parseprefixedExpression(Expr *&E);
+        bool parseTerm(Expr *&E);
         bool parseFactor(Expr *&E);
         
         bool parseExpressionList();
@@ -47,6 +48,8 @@ namespace tinylang {
 
         bool parseStatementSequence();
         bool parseQualident(Decl *&D, SMLoc& lastLoc);
+    private:
+        OperatorInfo generateOp();
     };
 }
 #endif

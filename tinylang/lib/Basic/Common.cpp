@@ -9,9 +9,10 @@ namespace tinylang {
             ss << "  " << tok.getLiteralData();
         }
         auto spell = tok.getSpell();
-        if(spell != "") {
+        if(spell == nullptr) {
             ss << "  " << spell;
         }
         ss << "\n";
+        return ss;
     }
 }

@@ -17,7 +17,11 @@ void Sema::initialize()
     CurrentScope->insert(FalseConst);
 }
 
-void Sema::enterScope(Decl * decl)
+Decl *tinylang::Sema::actOnConstantDecl(SMLoc Loc, StringRef Name, Expr *E)
+{
+    return new ConstantDeclaration(CurrentDecl, Loc, Name, E);
+}
+void Sema::enterScope(Decl *decl)
 {
     CurrentScope = new Scope(CurrentScope);
     CurrentDecl = decl;
@@ -32,7 +36,7 @@ void Sema::leaveScope()
 Expr* Sema::actOnIntegerLiteral(SMLoc Loc,StringRef Literal) 
 {
     uint8_t Radix = 10;
-    if (Literal.endswith("H")) {
+    if (Literal.ends_with("H")) {
         Literal = Literal.drop_back();
         Radix = 16;
     }
@@ -76,7 +80,44 @@ Decl *Sema::actOnQualIdentPart(Decl *Prev, SMLoc Loc, StringRef Name) {
     return nullptr;
 }
 
-bool Sema::actOnVariableDeclarationPart(DeclList& decls, const IdentList& idents, Decl* type, const SMLoc& lstLoc) {
+Expr * Sema::actOnPrefixedExpr(Expr *expr, OperatorInfo &op)
+{
+    return new PrefixExpression(expr, std::move(op), expr->getType(), expr->isConst());
+}
+
+bool Sema::actOnSimpleExpr(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &op)
+{
+    if ((lExpr->getType() != rExpr->getType()) ||
+        (!isOperatorForType(op.getKind(), lExpr->getType()))) {
+        Diags.report(op.getLocation(), diag::err_types_for_operator_not_compatible);
+        return false;
+    }
+    bool isConst = lExpr->isConst() && rExpr->isConst();
+    ret = new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
+    return true;
+}
+
+bool Sema::actOnTerm(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &op)
+{
+    if ((lExpr->getType() != rExpr->getType()) ||
+        (!isOperatorForType(op.getKind(), lExpr->getType()))) {
+        Diags.report(op.getLocation(), diag::err_types_for_operator_not_compatible);
+        return false;
+    }
+    bool isConst = lExpr->isConst() && rExpr->isConst();
+    bool isAND = op.getKind() == tok::kw_AND;
+    if (isConst && isAND) {
+        auto l = dyn_cast<BooleanLiteral>(lExpr);
+        auto r = dyn_cast<BooleanLiteral>(rExpr);
+        ret = (l->getValue() && r->getValue()) ? TrueLiteral : FalseLiteral;
+        return true;
+    }
+
+    ret = new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
+    return true;
+}
+bool Sema::actOnVariableDeclarationPart(DeclList &decls, const IdentList &idents, Decl *type, const SMLoc &lstLoc)
+{
     assert(CurrentScope && "current scope should be defined");
     if (TypeDeclaration* typ = dyn_cast<TypeDeclaration>(type)) {
         for (auto I = idents.begin(), E = idents.end(); I != E; ++I) {
