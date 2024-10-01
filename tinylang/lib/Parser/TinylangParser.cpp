@@ -1,6 +1,6 @@
 #include "tinylang/Parser/TinylangParser.h"
 
-bool tinylang::Parser::parseCompilationUnit(void)
+bool tinylang::Parser::parseCompilationUnit(ModuleDeclaration *& module)
 {
     if (!consume(tok::kw_MODULE)) {
         return false;
@@ -8,10 +8,10 @@ bool tinylang::Parser::parseCompilationUnit(void)
     if (!expect(tok::identifier)) {
         return false;
     }
-    auto module = ModuleDeclaration(nullptr, 
+    module = new ModuleDeclaration(nullptr, 
                                     curToken().getLocation(),
                                     curToken().getIdentifier());
-    EnterDeclScope _(Semantic, &module);
+    EnterDeclScope _(Semantic, module);
     advance();
     if (!consume(tok::semi)) {
         return false;
@@ -32,6 +32,7 @@ bool tinylang::Parser::parseCompilationUnit(void)
     if (!consume(tok::period)) {
         return false;
     }
+    module->setDecls(std::move(Decls));
     return true;
 }
 
@@ -143,8 +144,7 @@ bool tinylang::Parser::parseFactor(Expr *&E)
 
     if (curToken().is(tok::l_paren)) {
         advance();
-        Expr * p = nullptr; //dummy
-        if (!parseExpression(p)) return false;
+        if (!parseExpression(E)) return false;
 
         if (!consume(tok::r_paren)) return false;
         return true;

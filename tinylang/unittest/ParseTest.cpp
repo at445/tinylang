@@ -29,6 +29,7 @@ TEST(ParseTest, parseTest) {
 
   Parser parser(lexer, sema, Diags);
 
-  EXPECT_TRUE(parser.parseCompilationUnit());
+  ModuleDeclaration * module = nullptr;
+  EXPECT_TRUE(parser.parseCompilationUnit(module));
 }
   

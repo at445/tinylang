@@ -33,5 +33,8 @@ int main(int argc_, const char **argv_) {
 
   Parser parser(lexer, sema, diags);
 
-  return parser.parseCompilationUnit();
+  ModuleDeclaration * module = nullptr;
+  auto ret = parser.parseCompilationUnit(module);
+  module->print();
+  return ret;
 }

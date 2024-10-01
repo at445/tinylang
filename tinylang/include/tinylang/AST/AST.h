@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llvm/Support/raw_ostream.h"
 #include "tinylang/Basic/LLVM.h"
 #include "tinylang/Basic/TokenKinds.h"
 #include "llvm/ADT/APSInt.h"
@@ -8,7 +9,6 @@
 #include <string>
 #include <vector>
 namespace tinylang {
-  class TypeDeclaration;
   class FormalParameterDeclaration;
   class Decl;
   class Stmt;
@@ -57,6 +57,21 @@ namespace tinylang {
     SMLoc getLocation() { return Loc; }
     StringRef getName() { return Name; }
     Decl *getEnclosingDecl() { return EnclosingDecL; }
+    virtual void print(void) = 0;
+  };
+
+  class TypeDeclaration : public Decl {
+  public:
+    TypeDeclaration(Decl *EnclosingDecL, SMLoc Loc,
+                    StringRef Name)
+        : Decl(DK_Type, EnclosingDecL, Loc, Name) {}
+
+    static bool classof(const Decl *D) {
+      return D->getKind() == DK_Type; 
+    }
+    virtual void print(void) override {
+      llvm::outs() << Name;
+    }
   };
 
   class Expr {
@@ -85,6 +100,8 @@ namespace tinylang {
     TypeDeclaration *getType() { return Ty; }
     void setType(TypeDeclaration *T) { Ty = T; }
     bool isConst() { return IsConstant; }
+
+    virtual void print(void) = 0;
   };
   class Stmt {
   public:
@@ -122,37 +139,42 @@ namespace tinylang {
           Decls(Decls), Stmts(Stmts) {}
 
     const DeclList &getDecls() { return Decls; }
-    void setDecls(DeclList &D) { Decls = D; }
+    void setDecls(const DeclList &D) { Decls = D; }
     const StmtList &getStmts() { return Stmts; }
-    void setStmts(StmtList &L) { Stmts = L; }
+    void setStmts(const StmtList &L) { Stmts = L; }
 
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Module;
     }
-
+    virtual void print(void) override {
+      llvm::outs() << "Module " <<  Name << ";\n";
+      for(auto& decl : Decls) {
+        llvm::outs() << "\t";
+        decl->print();
+      }
+      llvm::outs() << "End" << ";\n";
+    }
 };
 
   class VariableDeclaration : public Decl {
   public:
+    TypeDeclaration* type;
     VariableDeclaration(Decl *EnclosingDecL, SMLoc Loc,
                         StringRef Name, TypeDeclaration *Ty)
-        : Decl(DK_Var, EnclosingDecL, Loc, Name) {}
+        : Decl(DK_Var, EnclosingDecL, Loc, Name),
+          type(Ty) {}
 
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Var; 
     }
-  };
-
-  class TypeDeclaration : public Decl {
-  public:
-    TypeDeclaration(Decl *EnclosingDecL, SMLoc Loc,
-                    StringRef Name)
-        : Decl(DK_Type, EnclosingDecL, Loc, Name) {}
-
-    static bool classof(const Decl *D) {
-      return D->getKind() == DK_Type; 
+    virtual void print(void) override {
+      llvm::outs() << "VAR " << Name << ": ";
+      type->print();
+      llvm::outs() << ";\n";
     }
   };
+
+  
 
   class ConstantDeclaration : public Decl {
     Expr *E;
@@ -167,6 +189,11 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Const;
     }
+    virtual void print(void) override {
+      llvm::outs() << "CONST " << Name << " = ";
+      E->print();
+      llvm::outs() << ";\n";
+    }
   };
 
   
@@ -180,6 +207,9 @@ namespace tinylang {
 
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Bool;
+    }
+    virtual void print(void) override {
+      llvm::outs() << (Value ? "True" : "False");
     }
   };
 
@@ -196,6 +226,9 @@ namespace tinylang {
 
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Int;
+    }
+    virtual void print(void) override {
+      llvm::outs() << Value;
     }
   };
 
@@ -233,6 +266,13 @@ namespace tinylang {
       static bool classof(const Expr *E) {
         return E->getKind() == EK_Infix;
       }
+      virtual void print(void) override {
+        llvm::outs() << "(";
+        Left->print();
+        llvm::outs() << " " << tok::getSpelling(Op.getKind())  << " ";
+        Right->print();
+        llvm::outs() << ")";
+      }
   };
   class PrefixExpression : public Expr {
     Expr *E;
@@ -248,6 +288,10 @@ namespace tinylang {
 
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Prefix;
+    }
+    virtual void print(void) override {
+       llvm::outs() << " " << tok::getSpelling(Op.getKind());
+       E->print();
     }
   };
 }

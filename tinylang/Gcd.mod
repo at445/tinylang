@@ -1,9 +1,10 @@
 MODULE Gcd;
 # FROM A IMPORT A1, A2;
 # IMPORT B1, B2, B3;
-VAR x: INTEGER;
-VAR y,z: INTEGER;
-CONST consta = 1 + 2 * 3;
+# VAR x: INTEGER;
+# VAR y,z: INTEGER;
+# CONST consta = (1 + 2) * (3 + 6);
+CONST consta = -3*(1+3);
 #PROCEDURE GCD(a, b: INTEGER) : INTEGER;
 #VAR t: INTEGER;
 #BEGIN

@@ -15,7 +15,7 @@ namespace tinylang {
             :ParserBase(lexer, diag),
             Semantic(semantic){};
 
-        bool parseCompilationUnit(void);
+        bool parseCompilationUnit(ModuleDeclaration *& module);
 
     private:
         bool parseImport(void);
