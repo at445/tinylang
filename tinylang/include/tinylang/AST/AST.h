@@ -164,6 +164,8 @@ namespace tinylang {
         : Decl(DK_Var, EnclosingDecL, Loc, Name),
           type(Ty) {}
 
+    TypeDeclaration *getType() { return type; }
+
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Var; 
     }
@@ -193,6 +195,26 @@ namespace tinylang {
       llvm::outs() << "CONST " << Name << " = ";
       E->print();
       llvm::outs() << ";\n";
+    }
+  };
+
+  class FormalParameterDeclaration : public Decl {
+    TypeDeclaration *Ty;
+    bool IsVar;
+
+  public:
+    FormalParameterDeclaration(Decl *EnclosingDecL, SMLoc Loc,
+                              StringRef Name,
+                              TypeDeclaration *Ty,
+                              bool IsVar)
+        : Decl(DK_Param, EnclosingDecL, Loc, Name), Ty(Ty),
+          IsVar(IsVar) {}
+
+    TypeDeclaration *getType() { return Ty; }
+    bool isVar() { return IsVar; }
+
+    static bool classof(const Decl *D) {
+      return D->getKind() == DK_Param;
     }
   };
 
@@ -290,8 +312,41 @@ namespace tinylang {
       return E->getKind() == EK_Prefix;
     }
     virtual void print(void) override {
-       llvm::outs() << " " << tok::getSpelling(Op.getKind());
+       llvm::outs() << "(" << tok::getSpelling(Op.getKind());
        E->print();
+       llvm::outs() << ")";
     }
   };
+  class VariableAccess : public Expr {
+    Decl *Var;
+
+  public:
+    VariableAccess(VariableDeclaration *Var)
+        : Expr(EK_Var, Var->getType(), false), Var(Var) {}
+    VariableAccess(FormalParameterDeclaration *Param)
+        : Expr(EK_Var, Param->getType(), false), Var(Param) {}
+
+    Decl *getDecl() { return Var; }
+
+    static bool classof(const Expr *E) {
+      return E->getKind() == EK_Var;
+    }
+  };
+
+  class ConstantAccess : public Expr {
+    ConstantDeclaration *Const;
+
+  public:
+    ConstantAccess(ConstantDeclaration *Const)
+        : Expr(EK_Const, Const->getExpr()->getType(), true),
+          Const(Const) {}
+
+    ConstantDeclaration *geDecl() { return Const; }
+
+    static bool classof(const Expr *E) {
+      return E->getKind() == EK_Const;
+    }
+  };
+
+  
 }

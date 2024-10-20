@@ -72,47 +72,42 @@ bool tinylang::Parser::parseConstantDeclaration(DeclList& decls)
 bool tinylang::Parser::parseExpression(Expr *&E)
 {
     Expr * p = nullptr;
-    if (!parseprefixedExpression(E)) return false;
+    if (!parseSimpleExpression(E)) return false;
 
     if(curToken().isOneOf(tok::equal, tok::hash, tok::less,
         tok::lessequal,tok::greater,tok::greaterequal)) {
+            tinylang::OperatorInfo op;
+            op = std::move(generateOp());
             advance();
-            if (!parseprefixedExpression(p)) return false;    
+            if (!parseSimpleExpression(p)) return false;    
     }
     return true;
 }
 bool tinylang::Parser::parseSimpleExpression(Expr *&E) {
-    if (!parseTerm(E)) return false;
+    if (!parsePrefixExpression(E)) return false;
 
     while (curToken().isOneOf(tok::plus, tok::minus, tok::kw_OR)) {
         auto op = generateOp();
         advance();
         Expr * rExpr = nullptr;
-        if (!parseTerm(rExpr)) return false; 
+        if (!parsePrefixExpression(rExpr)) return false; 
         Semantic.actOnSimpleExpr(E, E, rExpr, op);
     }
     return true;
 }
-bool tinylang::Parser::parseprefixedExpression(Expr *&E) {
-    bool isMinus = false;
-    if (curToken().is(tok::plus)) {
+bool tinylang::Parser::parsePrefixExpression(Expr *&E) {
+    if (curToken().isOneOf(tok::plus, tok::minus)) {
+        auto op = generateOp();
         advance();
-    }
-
-    tinylang::OperatorInfo op;
-    if (curToken().is(tok::minus)) {
-        isMinus = true;
-        op = std::move(generateOp());
-        advance();
-    }
-    auto ret = parseSimpleExpression(E);
-
-    if(ret && isMinus) {
-        E = Semantic.actOnPrefixedExpr(E, op);
+        Expr * rExpr = nullptr;
+        if (!parseTerm(rExpr)) return false;
+        E = Semantic.actOnPrefixedExpr(rExpr, op);
     }
     
-    return ret;
+    if (!parseTerm(E)) return false; 
+    return true;
 }
+
 
 bool tinylang::Parser::parseTerm(Expr *&E)
 {

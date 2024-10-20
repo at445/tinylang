@@ -51,9 +51,8 @@ bool Sema::isOperatorForType(tok::TokenKind Op,
   case tok::star:
   case tok::kw_DIV:
   case tok::kw_MOD:
-    return Ty == IntegerType;
   case tok::slash:
-    return false; // REAL not implemented
+    return Ty == IntegerType;
   case tok::kw_AND:
   case tok::kw_OR:
   case tok::kw_NOT:
@@ -82,6 +81,33 @@ Decl *Sema::actOnQualIdentPart(Decl *Prev, SMLoc Loc, StringRef Name) {
 
 Expr * Sema::actOnPrefixedExpr(Expr *expr, OperatorInfo &op)
 {
+    if (!expr) return nullptr;
+    if (!isOperatorForType(op.getKind(), expr->getType())) {
+        Diags.report(
+            op.getLocation(),
+            diag::err_types_for_operator_not_compatible,
+            tok::getSpelling(op.getKind()));
+    }
+    if (expr->isConst() && op.getKind() == tok::kw_NOT) {
+        BooleanLiteral *L = dyn_cast<BooleanLiteral>(expr);
+        return L->getValue() ? FalseLiteral : TrueLiteral;
+    }
+
+    if (op.getKind() == tok::minus) {
+        bool Ambiguous = true;
+        if (isa<IntegerLiteral>(expr) || isa<VariableAccess>(expr) || 
+            isa<ConstantAccess>(expr) || isa<PrefixExpression>(expr))
+            Ambiguous = false;
+        else if (auto *Infix = dyn_cast<InfixExpression>(expr)) {
+        tok::TokenKind Kind = Infix->getOperatorInfo().getKind();
+        if (Kind == tok::star || Kind == tok::slash)
+            Ambiguous = false;
+        }
+        if (Ambiguous) {
+            Diags.report(op.getLocation(), diag::warn_ambigous_negation);
+        }
+    }
+
     return new PrefixExpression(expr, std::move(op), expr->getType(), expr->isConst());
 }
 
