@@ -23,9 +23,11 @@ bool tinylang::Parser::parseCompilationUnit(ModuleDeclaration *& module)
     }
     DeclList Decls;
     StmtList Stmts;
-    if (!parseBlock(Decls, Stmts))
+    if (!parseBlock(Decls, Stmts)) {
+        module->setDecls(std::move(Decls));
+        module->setStmts(std::move(Stmts));
         return false;
-
+    }
     if (!consume(tok::identifier)) {
         return false;
     }
@@ -33,6 +35,7 @@ bool tinylang::Parser::parseCompilationUnit(ModuleDeclaration *& module)
         return false;
     }
     module->setDecls(std::move(Decls));
+    module->setStmts(std::move(Stmts));
     return true;
 }
 
@@ -63,8 +66,7 @@ bool tinylang::Parser::parseConstantDeclaration(DeclList& decls)
         if (!parseExpression(expr)) return false;
 
         if (!consume(tok::semi)) return false;
-        auto stmt = Semantic.actOnConstantDecl(loc, name, expr);
-        decls.push_back(stmt);
+        Semantic.actOnConstantDecl(decls, loc, name, expr);
     }
     return true;
 }
@@ -111,7 +113,7 @@ bool tinylang::Parser::parsePrefixExpression(Expr *&E) {
 
 bool tinylang::Parser::parseTerm(Expr *&E)
 {
-   
+    SMLoc loc = curToken().getLocation();
     if (!parseFactor(E)) return false;
 
     if (!curToken().isOneOf(tok::star, tok::slash, tok::kw_AND,
@@ -122,7 +124,7 @@ bool tinylang::Parser::parseTerm(Expr *&E)
     advance();
     Expr* rExpr = nullptr;
     if (!parseTerm(rExpr)) return false;
-    return Semantic.actOnTerm(E, E, rExpr, op);
+    return Semantic.actOnTerm(loc, op, E, E, rExpr);
 }
 bool tinylang::Parser::parseFactor(Expr *&E)
 {
@@ -146,13 +148,20 @@ bool tinylang::Parser::parseFactor(Expr *&E)
     }
 
     if (curToken().is(tok::kw_NOT)) {
-        Expr* expr = nullptr;
+        auto op = generateOp();
         advance();
-        return parseFactor(expr);
+        Expr* expr = nullptr;
+        if(!parseFactor(expr)) return false;
+        E = Semantic.actOnPrefixedExpr(expr, op);
+        return true;
     }
 
     if (curToken().is(tok::identifier)) {
-
+        Token tok = curToken();
+        advance();
+        SMLoc loc = tok.getLocation();
+        StringRef val = tok.getIdentifier();
+        if (!Semantic.actOnAccess(loc, val, E)) return false;
         while (curToken().is(tok::l_paren)) {
             advance();
             if (!parseExpressionList()) return false;

@@ -24,6 +24,7 @@ namespace tinylang {
       note_proc_identifier_declaration,
 
       err_symbold_declared,
+      err_not_const_for_const_declaration,
       err_types_for_operator_not_compatible,
       err_undeclared_name,
       err_if_expr_must_be_bool,

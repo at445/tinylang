@@ -110,7 +110,6 @@ TEST(DiagnosticTest, lexerTest) {
   llvm::raw_string_ostream output(str);
   do {
     lexer.next(tk);
-    auto typ = tk.getKind();
     output << tk;
   } while (tk.getKind() != tok::TokenKind::eof && tk.getKind() != tok::TokenKind::unknown);
   EXPECT_STREQ(expectRet.c_str(), output.str().c_str());

@@ -312,7 +312,7 @@ namespace tinylang {
       return E->getKind() == EK_Prefix;
     }
     virtual void print(void) override {
-       llvm::outs() << "(" << tok::getSpelling(Op.getKind());
+       llvm::outs() << "(" << tok::getSpelling(Op.getKind()) << " ";
        E->print();
        llvm::outs() << ")";
     }
@@ -331,6 +331,10 @@ namespace tinylang {
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Var;
     }
+
+    virtual void print(void) override {
+      llvm::outs() << Var->getName();
+    }
   };
 
   class ConstantAccess : public Expr {
@@ -345,6 +349,10 @@ namespace tinylang {
 
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Const;
+    }
+
+    virtual void print(void) override {
+      llvm::outs() << Const->getName();
     }
   };
 

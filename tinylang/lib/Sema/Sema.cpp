@@ -16,11 +16,6 @@ void Sema::initialize()
     CurrentScope->insert(TrueConst);
     CurrentScope->insert(FalseConst);
 }
-
-Decl *tinylang::Sema::actOnConstantDecl(SMLoc Loc, StringRef Name, Expr *E)
-{
-    return new ConstantDeclaration(CurrentDecl, Loc, Name, E);
-}
 void Sema::enterScope(Decl *decl)
 {
     CurrentScope = new Scope(CurrentScope);
@@ -89,8 +84,9 @@ Expr * Sema::actOnPrefixedExpr(Expr *expr, OperatorInfo &op)
             tok::getSpelling(op.getKind()));
     }
     if (expr->isConst() && op.getKind() == tok::kw_NOT) {
-        BooleanLiteral *L = dyn_cast<BooleanLiteral>(expr);
-        return L->getValue() ? FalseLiteral : TrueLiteral;
+        if (auto *L = dyn_cast<BooleanLiteral>(expr)) {
+            return L->getValue() ? FalseLiteral : TrueLiteral;
+        } 
     }
 
     if (op.getKind() == tok::minus) {
@@ -123,20 +119,27 @@ bool Sema::actOnSimpleExpr(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &o
     return true;
 }
 
-bool Sema::actOnTerm(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &op)
+bool Sema::actOnTerm(const SMLoc& Loc, const OperatorInfo &op, Expr *&ret, Expr *lExpr, Expr *rExpr)
 {
-    if ((lExpr->getType() != rExpr->getType()) ||
-        (!isOperatorForType(op.getKind(), lExpr->getType()))) {
-        Diags.report(op.getLocation(), diag::err_types_for_operator_not_compatible);
+
+    if (!isOperatorForType(op.getKind(), lExpr->getType())) {
+        Diags.report(Loc, diag::err_types_for_operator_not_compatible, 
+                    lExpr->getType()->getName(), 
+                    tok::getSpelling(op.getKind()));
         return false;
     }
     bool isConst = lExpr->isConst() && rExpr->isConst();
-    bool isAND = op.getKind() == tok::kw_AND;
-    if (isConst && isAND) {
+    if (isConst) {
         auto l = dyn_cast<BooleanLiteral>(lExpr);
         auto r = dyn_cast<BooleanLiteral>(rExpr);
-        ret = (l->getValue() && r->getValue()) ? TrueLiteral : FalseLiteral;
-        return true;
+        if (l && r) {
+            if (op.getKind() == tok::kw_AND) {
+                ret = (l->getValue() && r->getValue()) ? TrueLiteral : FalseLiteral;
+            } else if (op.getKind() == tok::kw_OR) {
+                ret = (l->getValue() || r->getValue()) ? TrueLiteral : FalseLiteral;
+            }
+            return true;
+        }
     }
 
     ret = new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
@@ -160,4 +163,40 @@ bool Sema::actOnVariableDeclarationPart(DeclList &decls, const IdentList &idents
 
     Diags.report(lstLoc, diag::err_vardecl_requires_type);
     return false;
+}
+bool Sema::actOnConstantDecl(DeclList& decls, SMLoc Loc, StringRef Name, Expr *E)
+{
+    assert(CurrentScope && "current scope should be defined");
+    auto decl = new ConstantDeclaration(CurrentDecl, Loc, Name, E);
+    if (!CurrentScope->insert(decl)) {
+        Diags.report(Loc, diag::err_symbold_declared, Name);
+        return false;
+    }
+    if (!E->isConst()) {
+        Diags.report(Loc, diag::err_not_const_for_const_declaration, Name);
+        return false;
+    }
+    decls.push_back(decl);
+    return true;
+}
+bool Sema::actOnAccess(SMLoc Loc, StringRef Name, Expr *&E) {
+    assert(CurrentScope && "current scope should be defined");
+    auto decl = CurrentScope->lookup(Name);
+    if (!decl) {
+        Diags.report(Loc, diag::err_undeclared_name, Name);
+        return false;
+    }
+    if (auto *V = dyn_cast<VariableDeclaration>(decl)) {
+        E = new VariableAccess(V);
+    } else if (auto *V = dyn_cast<FormalParameterDeclaration>(decl)) {
+        E = new VariableAccess(V);
+    } else if (auto *V = dyn_cast<ConstantDeclaration>(decl)) {
+        if (V == TrueConst)
+            E = TrueLiteral;
+        else if (V == FalseConst) 
+            E = FalseLiteral;
+        else 
+            E = new ConstantAccess(V);
+    }
+    return true;
 }
