@@ -41,9 +41,9 @@ namespace tinylang {
         bool parseIfStatement();
         bool parseWhileStatement();
         bool parseReturnStatement();
-        bool parseFormalParameter();
-        bool parseFormalParameterList();
-        bool parseFormalParameters();
+        bool parseFormalParameter(FormalParamList& params);
+        bool parseFormalParameterList(FormalParamList& params);
+        bool parseFormalParameters(ProcudureDeclaration*& procDecl);
 
 
         bool parseStatementSequence();

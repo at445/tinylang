@@ -10,8 +10,9 @@ MODULE Gcd;
     CONST constb = constC AND consta;
     CONST constE = consta AND (consta OR consta);
 
-    PROCEDURE GCD(a, b: INTEGER) : INTEGER;
-    #VAR t: INTEGER;
+    PROCEDURE GCD(x, b: INTEGER; c, d: INTEGER) : INTEGER;
+    VAR t: INTEGER;
+    VAR y: INTEGER;
     #BEGIN
     #  IF b = 0 THEN
     #    RETURN a;
@@ -27,7 +28,7 @@ MODULE Gcd;
     #    a := b;
     #    b := t;
     #  END;
-    #  RETURN a;
+    RETURN a;
     END GCD;
 
 END Gcd.

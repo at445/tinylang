@@ -23,6 +23,8 @@ namespace {
     {/*diag::err_not_const_for_const_declaration,               */ SourceMgr::DK_Error, "const variable should be initialized with const expression"},
     {/*diag::err_types_for_operator_not_compatible,          */ SourceMgr::DK_Error, "types \"{0}\" not compatible for operator \"{1}\""},
     {/*diag::err_undeclared_name,                            */ SourceMgr::DK_Error, "undeclared name \"{0}\""},
+    {/*diag::err_unkonw_type,                                 */ SourceMgr::DK_Error, "unknown type"},
+    
     {/*diag::err_if_expr_must_be_bool,                       */ SourceMgr::DK_Error, "expression of IF statement must have type BOOLEAN"},
     {/*diag::err_while_expr_must_be_bool,                    */ SourceMgr::DK_Error, "expression of IF statement must have type BOOLEAN"},
     {/*diag::err_vardecl_requires_type,                      */ SourceMgr::DK_Error, "variable declaration requires type"},

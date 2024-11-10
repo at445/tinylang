@@ -239,13 +239,21 @@ bool tinylang::Parser::parseVariableDeclaration(DeclList& decls) {
     return Semantic.actOnVariableDeclarationPart(decls, ids, D, lstLoc);
 }
 bool tinylang::Parser::parseProcedureDeclaration(DeclList& decls) {
-    if (!consume(tok::kw_PROCEDURE))
-        return false;
+    auto loc = curToken().getLocation();
+    advance();
 
-    if (!consume(tok::identifier))
+    if (!expect(tok::identifier)) {
         return false;
+    }
+    auto name = curToken().getIdentifier();
+    advance();
 
-    if (!parseFormalParameters()) return false;
+    ProcudureDeclaration * procDecl = nullptr;
+
+    procDecl = new ProcudureDeclaration(Semantic.getCurrentDecl(), loc, name);
+    EnterDeclScope _(Semantic, procDecl);
+
+    if (!parseFormalParameters(procDecl)) return false;
 
     if (!consume(tok::semi))
         return false;
@@ -253,9 +261,10 @@ bool tinylang::Parser::parseProcedureDeclaration(DeclList& decls) {
     DeclList Decls;
     StmtList Stmts; 
     if (!parseBlock(Decls, Stmts)) return false;
-
+    procDecl->addDecl(Decls);
     if (!consume(tok::identifier))
         return false;
+    decls.push_back(procDecl);
     return true;
 }
 bool tinylang::Parser::parseStatement()
@@ -345,10 +354,12 @@ bool tinylang::Parser::parseReturnStatement()
     return true;
 }
 
-bool tinylang::Parser::parseFormalParameter()
+bool tinylang::Parser::parseFormalParameter(FormalParamList& params)
 {
     IdentList ids;
+    bool IsVar = false;
     if (curToken().is(tok::kw_VAR)) {
+        IsVar = true;
         advance();
     }
     if (!parseIdentList(ids)) return false;
@@ -358,43 +369,46 @@ bool tinylang::Parser::parseFormalParameter()
     Decl* D = nullptr;
     SMLoc lstLoc;
     if (!parseQualident(D, lstLoc)) return false;
-
-    return true;
+    return Semantic.actOnFormalParameter(params, ids, D, IsVar, lstLoc);
 }
-bool tinylang::Parser::parseFormalParameterList()
+bool tinylang::Parser::parseFormalParameterList(FormalParamList& params)
 {
     if (curToken().isOneOf(tok::kw_VAR, tok::identifier))
     {
-        if (!parseFormalParameter()) return false;
+        if (!parseFormalParameter(params)) return false;
     }
 
     while(curToken().is(tok::semi)) {
         advance();
-        if (!parseFormalParameter()) return false;
+        if (!parseFormalParameter(params)) return false;
     }
-
     return true;
 }
 
 
-bool tinylang::Parser::parseFormalParameters()
+bool tinylang::Parser::parseFormalParameters(ProcudureDeclaration*& procDecl)
 {
-    if (curToken().is(tok::l_paren)) {
-        advance();
+    if(!expect(tok::l_paren)) return false;
+    advance();
 
-        if (!parseFormalParameterList()) return false;
+    FormalParamList params;
+    if (!parseFormalParameterList(params)) return false;
 
-        if (!consume(tok::r_paren)) return false;
+    if (!consume(tok::r_paren)) return false;
 
-        if (curToken().is(tok::colon)) {
+    if (!expect(tok::colon)) return false;
 
-            advance();
+    advance();
 
-            Decl* D = nullptr;
-            SMLoc lstLoc;
-            if (!parseQualident(D, lstLoc)) return false;
-        }
+    Decl* type = nullptr;
+    SMLoc lstLoc;
+    if (!parseQualident(type, lstLoc)) return false;
+    if (TypeDeclaration* typ = dyn_cast<TypeDeclaration>(type)) {
+        procDecl->setReturnType(typ);
+    } else {
+        diags.report(curToken().getLocation(), diag::err_unkonw_type);
     }
+    procDecl->addFormalParams(params);
     return true;
 }
 
@@ -471,7 +485,7 @@ bool tinylang::Parser::parseQualident(Decl *&D, SMLoc& lastLoc)
     lastLoc = curToken().getLocation();
     advance();
     if(!D) {
-        return false;
+        return false; 
     }
 
     while (curToken().is(tok::period) && isa<ModuleDeclaration>(D)) {

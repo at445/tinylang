@@ -27,6 +27,8 @@ namespace tinylang {
             initialize();
         }
         void initialize();
+
+        Decl *getCurrentDecl() {return CurrentDecl;}
         
         Expr* actOnIntegerLiteral(SMLoc Loc,StringRef Literal);
         Decl* actOnQualIdentPart(Decl *Prev, SMLoc Loc, StringRef Name);
@@ -36,6 +38,7 @@ namespace tinylang {
         
         bool actOnConstantDecl(DeclList& decls, SMLoc Loc, StringRef Name, Expr *E);
         bool actOnVariableDeclarationPart(DeclList& decls, const IdentList& ids, Decl* type, const SMLoc& lstLoc);
+        bool actOnFormalParameter(FormalParamList &decls, const IdentList &identList, Decl *type, bool isVar, const SMLoc& lstLoc);
         bool isOperatorForType(tok::TokenKind Op,TypeDeclaration *Ty);
 
         bool actOnAccess(SMLoc Loc, StringRef Name, Expr *&E);

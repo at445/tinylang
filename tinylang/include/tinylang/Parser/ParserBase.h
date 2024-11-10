@@ -43,7 +43,7 @@ namespace tinylang {
 
         inline bool expect(tok::TokenKind ExpectedTok) {
             if (curToken().getKind() != ExpectedTok) {
-                errorReport(ExpectedTok, curToken().getKind());
+                ErrorReport(ExpectedTok, curToken().getKind());
                 return false;
             }
             return true;
@@ -106,7 +106,7 @@ namespace tinylang {
         inline bool isParserProcess() { 
             return markers.empty(); 
         }
-        void errorReport(tok::TokenKind ExpectedTok, tok::TokenKind actualTok) {
+        void ErrorReport(tok::TokenKind ExpectedTok, tok::TokenKind actualTok) {
             auto ExpctSpel = tok::getSpelling(ExpectedTok);
             auto expectStr = (ExpctSpel == nullptr) ? 
                                 tok::getTokenName(ExpectedTok) : ExpctSpel;

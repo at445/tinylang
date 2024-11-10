@@ -145,6 +145,26 @@ bool Sema::actOnTerm(const SMLoc& Loc, const OperatorInfo &op, Expr *&ret, Expr 
     ret = new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
     return true;
 }
+
+bool Sema::actOnFormalParameter(FormalParamList &decls, const IdentList &idents, Decl *type, bool isVar, const SMLoc& lstLoc)
+{
+    assert(CurrentScope && "current scope should be defined");
+    if (TypeDeclaration* typ = dyn_cast<TypeDeclaration>(type)) {
+        for (auto I = idents.begin(), E = idents.end(); I != E; ++I) {
+            auto decl = new FormalParameterDeclaration(CurrentDecl, I->getLocation(), I->getName(),typ, isVar);
+            if (CurrentScope->insert(decl)) {
+                decls.push_back(decl);
+            }else {
+                Diags.report(I->getLocation(), diag::err_symbold_declared, I->getName());
+                return false;
+            }
+        }
+        return true;
+    } 
+
+    Diags.report(lstLoc, diag::err_vardecl_requires_type);
+    return false;
+}
 bool Sema::actOnVariableDeclarationPart(DeclList &decls, const IdentList &idents, Decl *type, const SMLoc &lstLoc)
 {
     assert(CurrentScope && "current scope should be defined");
@@ -154,7 +174,7 @@ bool Sema::actOnVariableDeclarationPart(DeclList &decls, const IdentList &idents
             if (CurrentScope->insert(decl)) {
                 decls.push_back(decl);
             }else {
-                Diags.report(I->getLocation(), diag::err_symbold_declared);
+                Diags.report(I->getLocation(), diag::err_symbold_declared, I->getName());
                 return false;
             }
         }

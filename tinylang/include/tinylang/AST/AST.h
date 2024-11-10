@@ -163,7 +163,6 @@ namespace tinylang {
     virtual void print(llvm::raw_ostream & rawStream) override {
       rawStream << Name << ": ";
       Ty->print(rawStream);
-      rawStream << ", ";
     }
   };
 
@@ -181,14 +180,16 @@ namespace tinylang {
   public:
     ProcudureDeclaration(Decl *EnclosingDecL, SMLoc Loc, StringRef Name)
       :Decl(DK_Proc, EnclosingDecL, Loc, Name) {}
+
     void setReturnType(TypeDeclaration * typ) {
       Ty = typ;
     }
     TypeDeclaration *getReturnType() {
       return Ty;
     }
-    void addFormalParam(FormalParameterDeclaration* param) {
-      FormalPara.push_back(param);
+
+    void addFormalParams(const FormalParamList& params) {
+      FormalPara = std::move(params);
     }
 
     const StmtList& getStmts() {
@@ -204,18 +205,27 @@ namespace tinylang {
     const DeclList& getDecls() {
       return Decls;
     }
-    void addStmt(Decl* decl) {
-      Decls.push_back(decl);
+    void addDecl(const DeclList& decl) {
+      Decls = std::move(decl);
     }
-    void concatStmts(DeclList& decls) {
+    void concatDecls(DeclList& decls) {
       Decls.insert(Decls.end(), decls.begin(), decls.end());
     }
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Proc;
     }
     virtual void print(llvm::raw_ostream & rawStream = llvm::outs()) override {
-      rawStream << "\tPROCEDURE " <<  Name << "( ";
-      std::for_each(FormalPara.begin(), FormalPara.end(), [&rawStream](auto para){para->print(rawStream);});
+      rawStream << "PROCEDURE " <<  Name << "( ";
+      size_t idx = 0;
+
+      std::for_each(FormalPara.begin(), FormalPara.end(), 
+        [&idx, &rawStream, this](auto para) {
+          para->print(rawStream);
+          idx++;
+          if (idx != this->FormalPara.size()) {
+            rawStream << " , ";
+          }
+        });
       rawStream << " ) : ";
       Ty->print(rawStream);
       rawStream << ";\n";

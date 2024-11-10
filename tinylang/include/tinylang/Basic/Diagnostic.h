@@ -27,6 +27,7 @@ namespace tinylang {
       err_not_const_for_const_declaration,
       err_types_for_operator_not_compatible,
       err_undeclared_name,
+      err_unkonw_type,
       err_if_expr_must_be_bool,
       err_while_expr_must_be_bool,
       err_vardecl_requires_type,
