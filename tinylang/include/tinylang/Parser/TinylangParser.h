@@ -34,7 +34,6 @@ namespace tinylang {
         bool parseExpression(Expr *&E);
         bool parseSimpleExpression(Expr *&E);
         bool parsePrefixExpression(Expr *&E);
-        bool parseprefixedExpression(Expr *&E);
         bool parseTerm(Expr *&E);
         bool parseFactor(Expr *&E);
         

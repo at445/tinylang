@@ -35,8 +35,7 @@ variableDeclaration
   : %empty
   | identList COLON qualident SEMI variableDeclaration ;
 procedureDeclaration
-  : PROCEDURE identifier formalParameters SEMI
-    block identifier ;
+  : PROCEDURE identifier formalParameters SEMI block identifier ;
 formalParameters
   : %empty | L_PAREN formalParameterList R_PAREN resultType ;
 formalParameterList

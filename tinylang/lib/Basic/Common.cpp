@@ -1,5 +1,5 @@
 #include "tinylang/Lexer/Token.h"
-#include "llvm/Support/raw_ostream.h"
+
 namespace tinylang {
     raw_ostream& operator<<(raw_ostream& ss, Token& tok) {
         // ss << "Token type: " << tok.getKind() << " name: " << tok.getName();
@@ -14,5 +14,13 @@ namespace tinylang {
         // }
         // ss << "\n";
         return ss;
+    }
+    
+    std::string generateTabs(int numTabs) {
+        std::string result;
+        for (int i = 0; i < numTabs; ++i) {
+            result += "\t";
+        }
+        return result;
     }
 }

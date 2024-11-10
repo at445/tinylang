@@ -1,18 +1,49 @@
 #pragma once
-
+#include <numeric>
 #include "llvm/Support/raw_ostream.h"
+#include "tinylang/AST/Base.h"
 #include "tinylang/Basic/LLVM.h"
 #include "tinylang/Basic/TokenKinds.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SMLoc.h"
-#include <string>
-#include <vector>
+
 namespace tinylang {
+  class Ident;
   class FormalParameterDeclaration;
-  class Decl;
-  class Stmt;
-  class Expr;
+  using IdentList = std::vector<Ident>;
+  using DeclList = std::vector<Decl *>;
+  using FormalParamList = std::vector<FormalParameterDeclaration *>;
+  using ExprList = std::vector<Expr *>;
+  using StmtList = std::vector<Stmt *>;
+  std::string generateTabs(int numTabs);
+
+  template <typename T>
+  std::string Concat(const std::vector<T>& vecs, int numHuriTab = 1) {
+      std::vector<std::string> declsStr;
+      declsStr.reserve(vecs.size());
+      for (size_t i = 0; i < vecs.size(); i++) {
+        std::string outputString;
+        llvm::raw_string_ostream rss(outputString);
+        vecs[i]->print(rss);
+        rss.flush();
+        declsStr.push_back(std::move(outputString));
+      }
+      std::size_t idx =0;
+      std::string result = std::accumulate(declsStr.begin(), declsStr.end() , generateTabs(numHuriTab), 
+        [&idx, &declsStr, numHuriTab](std::string& ret, const std::string& b) {
+          ret.append(b);
+          bool isLastElement = (idx == declsStr.size() - 1);
+          if (!isLastElement) {
+            ret.append("\n");
+            ret.append(generateTabs(numHuriTab));
+        }
+          idx++;
+          return ret;
+        });
+      return result;
+  };
+
   class Ident {
     SMLoc Loc;
     StringRef Name;
@@ -24,42 +55,8 @@ namespace tinylang {
     const StringRef &getName() const { return Name; }
   };
 
-  using IdentList = std::vector<Ident>;
-  using DeclList = std::vector<Decl *>;
-  using FormalParamList = std::vector<FormalParameterDeclaration *>;
-  using ExprList = std::vector<Expr *>;
-  using StmtList = std::vector<Stmt *>;
 
-  class Decl {
-  public:
-    enum DeclKind {
-      DK_Module,
-      DK_Const,
-      DK_Type,
-      DK_Var,
-      DK_Param,
-      DK_Proc
-    };
-
-  private:
-    DeclKind Kind;
-
-  protected:
-    Decl *EnclosingDecL;
-    SMLoc Loc;
-    StringRef Name;
-
-  public:
-    Decl(DeclKind Kind, Decl *EnclosingDecL, SMLoc Loc,StringRef Name)
-        : Kind(Kind), EnclosingDecL(EnclosingDecL), Loc(Loc),Name(Name) {}
-
-    DeclKind getKind() const { return Kind; }
-    SMLoc getLocation() { return Loc; }
-    StringRef getName() { return Name; }
-    Decl *getEnclosingDecl() { return EnclosingDecL; }
-    virtual void print(void) = 0;
-  };
-
+  
   class TypeDeclaration : public Decl {
   public:
     TypeDeclaration(Decl *EnclosingDecL, SMLoc Loc,
@@ -69,60 +66,10 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Type; 
     }
-    virtual void print(void) override {
-      llvm::outs() << Name;
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << Name;
     }
   };
-
-  class Expr {
-  public:
-    enum ExprKind {
-      EK_Infix,
-      EK_Prefix,
-      EK_Int,
-      EK_Bool,
-      EK_Var,
-      EK_Const,
-      EK_Func,
-    };
-
-  private:
-    const ExprKind Kind;
-    TypeDeclaration *Ty;
-    bool IsConstant;
-
-  protected:
-    Expr(ExprKind Kind, TypeDeclaration *Ty, bool IsConst)
-        : Kind(Kind), Ty(Ty), IsConstant(IsConst) {}
-
-  public:
-    ExprKind getKind() const { return Kind; }
-    TypeDeclaration *getType() { return Ty; }
-    void setType(TypeDeclaration *T) { Ty = T; }
-    bool isConst() { return IsConstant; }
-
-    virtual void print(void) = 0;
-  };
-  class Stmt {
-  public:
-    enum StmtKind {
-      SK_Assign,
-      SK_ProcCall,
-      SK_If,
-      SK_While,
-      SK_Return
-    };
-
-  private:
-    StmtKind Kind;
-
-  protected:
-    Stmt(StmtKind Kind) : Kind(Kind) {}
-
-  public:
-    StmtKind getKind() const { return Kind; }
-  };
-
   class ModuleDeclaration : public Decl {
     DeclList Decls;
     StmtList Stmts;
@@ -146,13 +93,10 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Module;
     }
-    virtual void print(void) override {
-      llvm::outs() << "Module " <<  Name << ";\n";
-      for(auto& decl : Decls) {
-        llvm::outs() << "\t";
-        decl->print();
-      }
-      llvm::outs() << "End" << ";\n";
+    virtual void print(llvm::raw_ostream & rawStream = llvm::outs()) override {
+      rawStream << "Module " <<  Name << ";\n";
+      rawStream << Concat(Decls);
+      rawStream << "\nEnd" << ";\n";
     }
 };
 
@@ -169,10 +113,10 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Var; 
     }
-    virtual void print(void) override {
-      llvm::outs() << "VAR " << Name << ": ";
-      type->print();
-      llvm::outs() << ";\n";
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << "VAR " << Name << ": ";
+      type->print(rawStream);
+      rawStream << ";";
     }
   };
 
@@ -191,10 +135,10 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Const;
     }
-    virtual void print(void) override {
-      llvm::outs() << "CONST " << Name << " = ";
-      E->print();
-      llvm::outs() << ";\n";
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << "CONST " << Name << " = ";
+      E->print(rawStream);
+      rawStream << ";";
     }
   };
 
@@ -216,8 +160,71 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Param;
     }
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << Name << ": ";
+      Ty->print(rawStream);
+      rawStream << ", ";
+    }
   };
 
+  class ProcudureDeclaration : public Decl {
+    TypeDeclaration *Ty;
+    FormalParamList FormalPara;
+    DeclList Decls;
+    StmtList Stmts;
+  private:
+    void removeLastNCharacters(std::string &inputString, size_t n = 2) {
+      if (inputString.length() >= n) {
+          inputString = inputString.substr(0, inputString.length() - n);
+      }
+    }
+  public:
+    ProcudureDeclaration(Decl *EnclosingDecL, SMLoc Loc, StringRef Name)
+      :Decl(DK_Proc, EnclosingDecL, Loc, Name) {}
+    void setReturnType(TypeDeclaration * typ) {
+      Ty = typ;
+    }
+    TypeDeclaration *getReturnType() {
+      return Ty;
+    }
+    void addFormalParam(FormalParameterDeclaration* param) {
+      FormalPara.push_back(param);
+    }
+
+    const StmtList& getStmts() {
+      return Stmts;
+    }
+    void addStmt(Stmt* stmt) {
+      Stmts.push_back(stmt);
+    }
+    void concatStmts(StmtList& stmts) {
+      Stmts.insert(Stmts.end(), stmts.begin(), stmts.end());
+    }
+
+    const DeclList& getDecls() {
+      return Decls;
+    }
+    void addStmt(Decl* decl) {
+      Decls.push_back(decl);
+    }
+    void concatStmts(DeclList& decls) {
+      Decls.insert(Decls.end(), decls.begin(), decls.end());
+    }
+    static bool classof(const Decl *D) {
+      return D->getKind() == DK_Proc;
+    }
+    virtual void print(llvm::raw_ostream & rawStream = llvm::outs()) override {
+      rawStream << "\tPROCEDURE " <<  Name << "( ";
+      std::for_each(FormalPara.begin(), FormalPara.end(), [&rawStream](auto para){para->print(rawStream);});
+      rawStream << " ) : ";
+      Ty->print(rawStream);
+      rawStream << ";\n";
+      rawStream << Concat(Decls, 2);
+      rawStream << "\n\tBEGIN";
+      rawStream << Concat(Stmts, 2);
+      rawStream << "\n\tEND;\n";
+    }
+  };
   
   class BooleanLiteral : public Expr {
     bool Value;
@@ -230,8 +237,8 @@ namespace tinylang {
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Bool;
     }
-    virtual void print(void) override {
-      llvm::outs() << (Value ? "True" : "False");
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << (Value ? "True" : "False");
     }
   };
 
@@ -249,8 +256,8 @@ namespace tinylang {
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Int;
     }
-    virtual void print(void) override {
-      llvm::outs() << Value;
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << Value;
     }
   };
 
@@ -288,12 +295,12 @@ namespace tinylang {
       static bool classof(const Expr *E) {
         return E->getKind() == EK_Infix;
       }
-      virtual void print(void) override {
-        llvm::outs() << "(";
-        Left->print();
-        llvm::outs() << " " << tok::getSpelling(Op.getKind())  << " ";
-        Right->print();
-        llvm::outs() << ")";
+      virtual void print(llvm::raw_ostream & rawStream) override {
+        rawStream << "(";
+        Left->print(rawStream);
+        rawStream << " " << tok::getSpelling(Op.getKind())  << " ";
+        Right->print(rawStream);
+        rawStream << ")";
       }
   };
   class PrefixExpression : public Expr {
@@ -311,10 +318,10 @@ namespace tinylang {
     static bool classof(const Expr *E) {
       return E->getKind() == EK_Prefix;
     }
-    virtual void print(void) override {
-       llvm::outs() << "(" << tok::getSpelling(Op.getKind()) << " ";
-       E->print();
-       llvm::outs() << ")";
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << "(" << tok::getSpelling(Op.getKind()) << " ";
+      E->print(rawStream);
+      rawStream << ")";
     }
   };
   class VariableAccess : public Expr {
@@ -332,14 +339,13 @@ namespace tinylang {
       return E->getKind() == EK_Var;
     }
 
-    virtual void print(void) override {
-      llvm::outs() << Var->getName();
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << Var->getName();
     }
   };
 
   class ConstantAccess : public Expr {
     ConstantDeclaration *Const;
-
   public:
     ConstantAccess(ConstantDeclaration *Const)
         : Expr(EK_Const, Const->getExpr()->getType(), true),
@@ -351,10 +357,10 @@ namespace tinylang {
       return E->getKind() == EK_Const;
     }
 
-    virtual void print(void) override {
-      llvm::outs() << Const->getName();
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << Const->getName();
     }
   };
 
-  
+    
 }

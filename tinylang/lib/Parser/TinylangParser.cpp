@@ -251,7 +251,7 @@ bool tinylang::Parser::parseProcedureDeclaration(DeclList& decls) {
         return false;
 
     DeclList Decls;
-    StmtList Stmts;
+    StmtList Stmts; 
     if (!parseBlock(Decls, Stmts)) return false;
 
     if (!consume(tok::identifier))
