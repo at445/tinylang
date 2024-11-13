@@ -31,7 +31,7 @@ void Sema::leaveScope()
 Expr* Sema::actOnIntegerLiteral(SMLoc Loc,StringRef Literal) 
 {
     uint8_t Radix = 10;
-    if (Literal.ends_with("H")) {
+    if (Literal.back() == 'H') {
         Literal = Literal.drop_back();
         Radix = 16;
     }

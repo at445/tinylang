@@ -4,7 +4,6 @@
 #include "tinylang/Lexer/Lexer.h"
 #include "tinylang/Parser/TinylangParser.h"
 #include "llvm/Support/InitLLVM.h"
-
 using namespace tinylang;
 
 std::string fileName = "/home/jasson/Practice/tinylang/Gcd.mod";
@@ -13,10 +12,10 @@ int main(int argc_, const char **argv_) {
 
   llvm::outs() << "Tinylang version is " << tinylang::getTinylangVersion() << "\n\n";
 
-  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(fileName);
+  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFile(argv_[1]);
   
   if (std::error_code BufferError = FileOrErr.getError()) {
-    llvm::errs() << "Error reading " << "Gcd.txt" << ": " << BufferError.message() << "\n";
+    llvm::errs() << "Error reading " << argv_[1] << ": " << BufferError.message() << "\n";
     return -1;
   }
 
