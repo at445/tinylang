@@ -10,19 +10,19 @@ MODULE Gcd;
     CONST constb = constC AND consta;
     CONST constE = consta AND (consta OR consta);
 
-    PROCEDURE GCD(x, b: INTEGER; c, d: INTEGER) : INTEGER;
+    PROCEDURE GCD(a, b: INTEGER; c, d: INTEGER) : INTEGER;
     VAR t: INTEGER;
     VAR y: INTEGER;
-    #BEGIN
-    #  IF b = 0 THEN
-    #    RETURN a;
-    #  ELSE
-    #    b := AH;
-    #    IF (b + 1) * (2+a) = a + 4 THEN
-    #      RETURN a;
-    #    END;
-    #    b := AH;
-    #  END;
+    BEGIN
+      IF b = 0 THEN
+        RETURN a;
+      ELSE
+        b := AH;
+        IF (b + 1) * (2+a) = a + 4 THEN
+          RETURN a;
+        END;
+        b := AH;
+      END;
     #  WHILE b # 0 DO
     #    t := a MOD b;
     #    a := b;

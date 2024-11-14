@@ -33,7 +33,8 @@ namespace tinylang {
         Expr* actOnIntegerLiteral(SMLoc Loc,StringRef Literal);
         Decl* actOnQualIdentPart(Decl *Prev, SMLoc Loc, StringRef Name);
         Expr* actOnPrefixedExpr(Expr *expr, OperatorInfo &op);
-        bool actOnSimpleExpr(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &op);
+        Expr* actOnRelationExpr(Expr *lExpr, Expr *rExpr, OperatorInfo &op);
+        Expr* actOnSimpleExpr(Expr *lExpr, Expr *rExpr, OperatorInfo &op);
         bool actOnTerm(const SMLoc& Loc, const OperatorInfo &op, Expr *&ret, Expr *lExpr, Expr *rExpr);
         
         bool actOnConstantDecl(DeclList& decls, SMLoc Loc, StringRef Name, Expr *E);

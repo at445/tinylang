@@ -28,7 +28,7 @@ namespace tinylang {
         bool parseVariableDeclaration(DeclList& decls);
         bool parseProcedureDeclaration(DeclList& decls);
 
-        bool parseStatement();
+        bool parseStatement(StmtList& stmts);
         bool parseActualParams();
 
         bool parseExpression(Expr *&E);
@@ -37,16 +37,16 @@ namespace tinylang {
         bool parseTerm(Expr *&E);
         bool parseFactor(Expr *&E);
         
-        bool parseExpressionList();
-        bool parseIfStatement();
-        bool parseWhileStatement();
-        bool parseReturnStatement();
+        bool parseExpressionList(ExprList& exprList);
+        bool parseIfStatement(StmtList& stmts);
+        bool parseWhileStatement(StmtList& stmts);
+        bool parseReturnStatement(StmtList& stmts);
         bool parseFormalParameter(FormalParamList& params);
         bool parseFormalParameterList(FormalParamList& params);
         bool parseFormalParameters(ProcudureDeclaration*& procDecl);
 
 
-        bool parseStatementSequence();
+        bool parseStatementSequence(StmtList& stmts);
         bool parseQualident(Decl *&D, SMLoc& lastLoc);
     private:
         OperatorInfo generateOp();

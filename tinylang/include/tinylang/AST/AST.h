@@ -195,8 +195,8 @@ namespace tinylang {
     const StmtList& getStmts() {
       return Stmts;
     }
-    void addStmt(Stmt* stmt) {
-      Stmts.push_back(stmt);
+    void addStmt(const StmtList& stmt) {
+      Stmts = std::move(stmt);
     }
     void concatStmts(StmtList& stmts) {
       Stmts.insert(Stmts.end(), stmts.begin(), stmts.end());
@@ -229,8 +229,8 @@ namespace tinylang {
       rawStream << " ) : ";
       Ty->print(rawStream);
       rawStream << ";\n";
-      rawStream << Concat(Decls, 2);
-      rawStream << "\n\tBEGIN";
+      rawStream << Concat(Decls);
+      rawStream << "\n\n\tBEGIN\n";
       rawStream << Concat(Stmts, 2);
       rawStream << "\n\tEND;\n";
     }
@@ -371,6 +371,79 @@ namespace tinylang {
       rawStream << Const->getName();
     }
   };
-
-    
+  class ReturnStatement : public Stmt {
+   Expr * m_expr;
+   public:
+      ReturnStatement(Expr * expr)
+      :  Stmt(SK_Return),
+         m_expr(expr){}
+      Expr * getExpr() const {
+         return m_expr;
+      }
+      static bool classof(const Stmt *E) {
+         return E->getKind() == SK_Return;
+      }
+      virtual void print(llvm::raw_ostream & rawStream) override {
+         rawStream << "RETURN ";
+         m_expr->print(rawStream);
+      }
+  };
+  class IfStatement : public Stmt {
+   Expr * m_expr;
+   StmtList m_TrueBranch;
+   StmtList m_FalseBranch;
+   public:
+      IfStatement(Expr * expr)
+      :  Stmt(SK_If),
+         m_expr(expr){}
+      Expr * getExpr() const {
+         return m_expr;
+      }
+      void setTrueBranch(const StmtList& stmts) {
+         m_TrueBranch = std::move(stmts);
+      }
+      const StmtList& getTrueBranch() {
+         return m_TrueBranch;
+      }
+      void setFalseBranch(const StmtList& stmts) {
+         m_FalseBranch = std::move(stmts);
+      }
+      const StmtList& getFalseBranch() {
+         return m_FalseBranch;
+      }
+      static bool classof(const Stmt *E) {
+         return E->getKind() == SK_If;
+      }
+      virtual void print(llvm::raw_ostream & rawStream) override {
+         rawStream << "IF ";
+         m_expr->print(rawStream);
+         rawStream << "THEN\n";
+         rawStream << Concat(m_TrueBranch, 2);
+         if (!m_FalseBranch.empty()) {
+            rawStream << "ELSE\n";
+            rawStream << Concat(m_FalseBranch, 2);
+         }
+         rawStream << "END\n";
+      }
+  };
+  class AssignStatement : public Stmt {
+   VariableAccess * targetExpr;
+   Expr * sourceExpr;
+   public:
+      AssignStatement(VariableAccess * target, Expr * source)
+      :  Stmt(SK_Return),
+         targetExpr(target),
+         sourceExpr(source){}
+      Expr * getExpr() const {
+         return targetExpr;
+      }
+      static bool classof(const Stmt *E) {
+         return E->getKind() == SK_Return;
+      }
+      virtual void print(llvm::raw_ostream & rawStream) override {
+         targetExpr->print(rawStream);
+         rawStream << " := ";
+         sourceExpr->print(rawStream);
+      }
+  };
 }

@@ -107,7 +107,13 @@ Expr * Sema::actOnPrefixedExpr(Expr *expr, OperatorInfo &op)
     return new PrefixExpression(expr, std::move(op), expr->getType(), expr->isConst());
 }
 
-bool Sema::actOnSimpleExpr(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &op)
+Expr * Sema::actOnRelationExpr(Expr *lExpr, Expr *rExpr, OperatorInfo &op)
+{
+    bool isConst = lExpr->isConst() && rExpr->isConst();
+    return new InfixExpression(lExpr, rExpr, std::move(op), BooleanType, isConst);;
+}
+
+Expr * Sema::actOnSimpleExpr(Expr *lExpr, Expr *rExpr, OperatorInfo &op)
 {
     if ((lExpr->getType() != rExpr->getType()) ||
         (!isOperatorForType(op.getKind(), lExpr->getType()))) {
@@ -115,8 +121,7 @@ bool Sema::actOnSimpleExpr(Expr *&ret, Expr *lExpr, Expr *rExpr, OperatorInfo &o
         return false;
     }
     bool isConst = lExpr->isConst() && rExpr->isConst();
-    ret = new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
-    return true;
+    return new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
 }
 
 bool Sema::actOnTerm(const SMLoc& Loc, const OperatorInfo &op, Expr *&ret, Expr *lExpr, Expr *rExpr)
