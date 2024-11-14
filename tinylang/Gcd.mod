@@ -19,7 +19,10 @@ MODULE Gcd;
       ELSE
         b := AH;
         IF (b + 1) * (2+a) = a + 4 THEN
-          RETURN a;
+         IF (b + 1) * (2+a) = a + 4 THEN
+           RETURN a;
+         END;
+         RETURN a;
         END;
         b := AH;
       END;

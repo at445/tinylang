@@ -31,7 +31,12 @@ namespace tinylang {
         llvm::SMLoc getLocation() { return Loc; }
         llvm::StringRef getName() { return Name; }
         Decl *getEnclosingDecl() { return EnclosingDecL; }
-        virtual void print(llvm::raw_ostream & rawStream) = 0;
+        virtual void print(llvm::raw_ostream & rawStream, int tabNumber) {
+         for (int i = 0; i < tabNumber; i++)
+         {
+            rawStream << "\t";
+         }
+        }
     };
     class TypeDeclaration;
     class Expr {
@@ -81,6 +86,11 @@ namespace tinylang {
 
     public:
         StmtKind getKind() const { return Kind; }
-        virtual void print(llvm::raw_ostream & rawStream) = 0;
+        virtual void print(llvm::raw_ostream & rawStream, int tabNumber) {
+         for (int i = 0; i < tabNumber; i++)
+         {
+            rawStream << "\t";
+         }
+        }
     };
 }

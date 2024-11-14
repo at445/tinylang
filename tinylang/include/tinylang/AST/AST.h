@@ -16,33 +16,6 @@ namespace tinylang {
   using FormalParamList = std::vector<FormalParameterDeclaration *>;
   using ExprList = std::vector<Expr *>;
   using StmtList = std::vector<Stmt *>;
-  std::string generateTabs(int numTabs);
-
-  template <typename T>
-  std::string Concat(const std::vector<T>& vecs, int numHuriTab = 1) {
-      std::vector<std::string> declsStr;
-      declsStr.reserve(vecs.size());
-      for (size_t i = 0; i < vecs.size(); i++) {
-        std::string outputString;
-        llvm::raw_string_ostream rss(outputString);
-        vecs[i]->print(rss);
-        rss.flush();
-        declsStr.push_back(std::move(outputString));
-      }
-      std::size_t idx =0;
-      std::string result = std::accumulate(declsStr.begin(), declsStr.end() , generateTabs(numHuriTab), 
-        [&idx, &declsStr, numHuriTab](std::string& ret, const std::string& b) {
-          ret.append(b);
-          bool isLastElement = (idx == declsStr.size() - 1);
-          if (!isLastElement) {
-            ret.append("\n");
-            ret.append(generateTabs(numHuriTab));
-        }
-          idx++;
-          return ret;
-        });
-      return result;
-  };
 
   class Ident {
     SMLoc Loc;
@@ -66,7 +39,7 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Type; 
     }
-    virtual void print(llvm::raw_ostream & rawStream) override {
+    virtual void print(llvm::raw_ostream & rawStream, int tabNumber = 0) override {
       rawStream << Name;
     }
   };
@@ -93,10 +66,15 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Module;
     }
-    virtual void print(llvm::raw_ostream & rawStream = llvm::outs()) override {
-      rawStream << "Module " <<  Name << ";\n";
-      rawStream << Concat(Decls);
-      rawStream << "\nEnd" << ";\n";
+    virtual void print(llvm::raw_ostream & rawStream = llvm::outs(), int tabNumber = 0) override {
+      rawStream << "MODULE " <<  Name << ";\n";
+      for (const auto& decl: Decls) {
+         decl->print(rawStream, tabNumber + 1);
+      }
+      for (const auto& stmt: Stmts) {
+         stmt->print(rawStream, tabNumber + 1);
+      }
+      rawStream << "END" << ";\n";
     }
 };
 
@@ -113,10 +91,11 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Var; 
     }
-    virtual void print(llvm::raw_ostream & rawStream) override {
+    virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+      Decl::print(rawStream, tabNumber);
       rawStream << "VAR " << Name << ": ";
       type->print(rawStream);
-      rawStream << ";";
+      rawStream << ";\n";
     }
   };
 
@@ -135,10 +114,11 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Const;
     }
-    virtual void print(llvm::raw_ostream & rawStream) override {
+    virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+      Decl::print(rawStream, tabNumber);
       rawStream << "CONST " << Name << " = ";
       E->print(rawStream);
-      rawStream << ";";
+      rawStream << ";\n";
     }
   };
 
@@ -160,7 +140,7 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Param;
     }
-    virtual void print(llvm::raw_ostream & rawStream) override {
+    virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
       rawStream << Name << ": ";
       Ty->print(rawStream);
     }
@@ -214,25 +194,26 @@ namespace tinylang {
     static bool classof(const Decl *D) {
       return D->getKind() == DK_Proc;
     }
-    virtual void print(llvm::raw_ostream & rawStream = llvm::outs()) override {
+    virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+      Decl::print(rawStream, tabNumber);
       rawStream << "PROCEDURE " <<  Name << "( ";
-      size_t idx = 0;
-
-      std::for_each(FormalPara.begin(), FormalPara.end(), 
-        [&idx, &rawStream, this](auto para) {
-          para->print(rawStream);
-          idx++;
-          if (idx != this->FormalPara.size()) {
-            rawStream << " , ";
-          }
-        });
-      rawStream << " ) : ";
+      for (const auto& para: FormalPara) {
+         para->print(rawStream, 0);
+      }
+      rawStream << ") : ";
       Ty->print(rawStream);
-      rawStream << ";\n";
-      rawStream << Concat(Decls);
-      rawStream << "\n\n\tBEGIN\n";
-      rawStream << Concat(Stmts, 2);
-      rawStream << "\n\tEND;\n";
+      rawStream << "\n";
+
+      for (const auto& decl: Decls) {
+         decl->print(rawStream, tabNumber);
+      }
+      Decl::print(rawStream, tabNumber);
+      rawStream << "BEGIN\n";
+      for (const auto& stmt: Stmts) {
+         stmt->print(rawStream, tabNumber + 1);
+      }
+      Decl::print(rawStream, tabNumber);
+      rawStream << "END;\n";
     }
   };
   
@@ -383,9 +364,11 @@ namespace tinylang {
       static bool classof(const Stmt *E) {
          return E->getKind() == SK_Return;
       }
-      virtual void print(llvm::raw_ostream & rawStream) override {
+      virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+         Stmt::print(rawStream, tabNumber);
          rawStream << "RETURN ";
          m_expr->print(rawStream);
+         rawStream << ";\n";
       }
   };
   class IfStatement : public Stmt {
@@ -414,15 +397,22 @@ namespace tinylang {
       static bool classof(const Stmt *E) {
          return E->getKind() == SK_If;
       }
-      virtual void print(llvm::raw_ostream & rawStream) override {
+      virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+         Stmt::print(rawStream, tabNumber);
          rawStream << "IF ";
          m_expr->print(rawStream);
-         rawStream << "THEN\n";
-         rawStream << Concat(m_TrueBranch, 2);
-         if (!m_FalseBranch.empty()) {
-            rawStream << "ELSE\n";
-            rawStream << Concat(m_FalseBranch, 2);
+         rawStream << " THEN\n";
+         for (const auto& stmt: m_TrueBranch) {
+            stmt->print(rawStream, tabNumber+1);
          }
+         if (!m_FalseBranch.empty()) {
+            Stmt::print(rawStream, tabNumber);
+            rawStream << "ELSE\n";
+            for (const auto& stmt: m_FalseBranch) {
+               stmt->print(rawStream, tabNumber+1);
+            }
+         }
+         Stmt::print(rawStream, tabNumber);
          rawStream << "END\n";
       }
   };
@@ -440,10 +430,12 @@ namespace tinylang {
       static bool classof(const Stmt *E) {
          return E->getKind() == SK_Return;
       }
-      virtual void print(llvm::raw_ostream & rawStream) override {
+      virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+         Stmt::print(rawStream, tabNumber);
          targetExpr->print(rawStream);
          rawStream << " := ";
          sourceExpr->print(rawStream);
+         rawStream << ";\n";
       }
   };
 }
