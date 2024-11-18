@@ -45,7 +45,7 @@ namespace {
     { /*tok::kw_FROM,          */ "FROM", nullptr},
     { /*tok::kw_IF,            */ "IF", nullptr},
     { /*tok::kw_IMPORT,        */ "IMPORT", nullptr},
-    { /*tok::kw_MOD,           */ "MOD", nullptr},
+    { /*tok::kw_MOD,           */ "MOD", "MOD"},
     { /*tok::kw_MODULE,        */ "MODULE", nullptr},
     { /*tok::kw_NOT,           */ "NOT", "NOT"},
     { /*tok::kw_OR,            */ "OR", "OR"},

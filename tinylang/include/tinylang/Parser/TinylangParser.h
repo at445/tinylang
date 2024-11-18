@@ -29,7 +29,7 @@ namespace tinylang {
         bool parseProcedureDeclaration(DeclList& decls);
 
         bool parseStatement(StmtList& stmts);
-        bool parseActualParams();
+        bool parseActualParams(ExprList &exprs);
 
         bool parseExpression(Expr *&E);
         bool parseSimpleExpression(Expr *&E);

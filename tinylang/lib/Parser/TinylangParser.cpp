@@ -253,7 +253,7 @@ bool tinylang::Parser::parseProcedureDeclaration(DeclList& decls) {
 
     ProcudureDeclaration * procDecl = nullptr;
 
-    procDecl = new ProcudureDeclaration(Semantic.getCurrentDecl(), loc, name);
+    Semantic.actOnProduceDeclarationPart(decls, loc, name, procDecl);
     EnterDeclScope _(Semantic, procDecl);
 
     if (!parseFormalParameters(procDecl)) return false;
@@ -268,32 +268,25 @@ bool tinylang::Parser::parseProcedureDeclaration(DeclList& decls) {
     procDecl->concatStmts(Stmts);
     if (!consume(tok::identifier))
         return false;
-    decls.push_back(procDecl);
     return true;
 }
 bool tinylang::Parser::parseStatement(StmtList& stmts)
 {
     if (curToken().is(tok::identifier)) {
-        Expr* E = nullptr;
-        auto tok = curToken();
+      auto tok = curToken();
+      advance();
+      SMLoc loc = tok.getLocation();
+      StringRef val = tok.getIdentifier();
+      if (curToken().is(tok::colonequal)) {
         advance();
-        SMLoc loc = tok.getLocation();
-        StringRef val = tok.getIdentifier();
-
-        if (!Semantic.actOnAccess(loc, val, E)) return false;
-        auto *V = dyn_cast<VariableAccess>(E);
-        if (!V) {
-         diags.report(tok.getLocation(), diag::err_undeclared_name, tok.getIdentifier());
-         return false;
-        }
-         if (curToken().is(tok::colonequal)) {
-            advance();
-            Expr * p = nullptr; 
-            if (!parseExpression(p)) return false;
-            stmts.push_back(new AssignStatement(V, p));
-         } else {
-            if (!parseActualParams()) return false;
-         }
+        Expr * p = nullptr; 
+        if (!parseExpression(p)) return false;
+        Semantic.actOnAssignment(loc, val, p, stmts);
+      } else {
+        ExprList exprs;
+        if (!parseActualParams(exprs)) return false;
+        Semantic.actOnFunctionCall(loc, val, exprs, stmts);
+      }
     }
 
     if (curToken().is(tok::kw_IF)) {
@@ -339,22 +332,24 @@ bool tinylang::Parser::parseIfStatement(StmtList& stmts) {
 }
 bool tinylang::Parser::parseWhileStatement(StmtList& stmts)
 {
-    if (!consume(tok::kw_WHILE)) {
-        return false;
-    }
-    Expr * p = nullptr; //dummy
-    if (!parseExpression(p)) return false;
+  if (!consume(tok::kw_WHILE)) {
+      return false;
+  }
+  Expr * p = nullptr;
+  if (!parseExpression(p)) return false;
+  WhileStatement * whileStmt = new WhileStatement(p);
+  if (!consume(tok::kw_DO)) {
+      return false;
+  }
+  StmtList content;
+  if (!parseStatementSequence(content)) return false;
+  whileStmt->setStmts(content);
+  if (!consume(tok::kw_END)) {
+      return false;
+  }
 
-    if (!consume(tok::kw_DO)) {
-        return false;
-    }
-
-    if (!parseStatementSequence(stmts)) return false;
-
-    if (!consume(tok::kw_END)) {
-        return false;
-    }
-    return true;
+  stmts.push_back(whileStmt);
+  return true;
 }
 bool tinylang::Parser::parseReturnStatement(StmtList& stmts)
 {
@@ -424,23 +419,13 @@ bool tinylang::Parser::parseFormalParameters(ProcudureDeclaration*& procDecl)
     return true;
 }
 
-bool tinylang::Parser::parseActualParams()
+bool tinylang::Parser::parseActualParams(ExprList &exprs)
 {
-    while (curToken().is(tok::l_paren)) {
+    if (curToken().is(tok::l_paren)) {
         advance();
-
-        if (!curToken().is(tok::r_paren)) {
-            ExprList exprs;
-            if (!parseExpressionList(exprs)) return false;
-        }
-
-        if (!consume(tok::kw_THEN)) return false;
-        StmtList stmts;
-        if (!parseStatementSequence(stmts)) return false;
-
-        if(!curToken().is(tok::kw_ELSE)) {
-            if (!parseStatementSequence(stmts)) return false;
-        }
+        if (!parseExpressionList(exprs)) return false;
+        expect(tok::r_paren);
+        advance();
     }
     return true;
 }

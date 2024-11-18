@@ -39,9 +39,11 @@ namespace tinylang {
         
         bool actOnConstantDecl(DeclList& decls, SMLoc Loc, StringRef Name, Expr *E);
         bool actOnVariableDeclarationPart(DeclList& decls, const IdentList& ids, Decl* type, const SMLoc& lstLoc);
+        bool actOnProduceDeclarationPart(DeclList &decls, const SMLoc &loc, StringRef name, ProcudureDeclaration *& decl);
         bool actOnFormalParameter(FormalParamList &decls, const IdentList &identList, Decl *type, bool isVar, const SMLoc& lstLoc);
         bool isOperatorForType(tok::TokenKind Op,TypeDeclaration *Ty);
-
+        bool actOnAssignment(SMLoc Loc, StringRef Name, Expr *p, StmtList &Stmts);
+        bool actOnFunctionCall(SMLoc Loc, StringRef Name, const ExprList &p, StmtList &Stmts);
         bool actOnAccess(SMLoc Loc, StringRef Name, Expr *&E);
     };
 

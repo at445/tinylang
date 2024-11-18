@@ -72,98 +72,101 @@ void Lexer::formToken(Token &Result, const char *TokEnd, tok::TokenKind Kind)
 }
 
 void Lexer::next(Token &Result) {
-    while (*CurPtr && charinfo::isWhitespace(*CurPtr)) ++CurPtr;
-    
-    if(*CurPtr == '\0') {
-        Result.setKind(tok::TokenKind::eof);
-        return;
-    }
+  while (*CurPtr && charinfo::isWhitespace(*CurPtr)) ++CurPtr;
+  
+  if(*CurPtr == '\0') {
+      Result.setKind(tok::TokenKind::eof);
+      return;
+  }
 
-    if(speculateNumber()) {
-        number(Result);
-        return;
+  if(speculateNumber()) {
+      number(Result);
+      return;
+  }
+  
+  if (charinfo::isIdentifierHead(*CurPtr)) {
+      identifierOrKeyword(Result);
+      return;
+  } 
+  if (charinfo::isStringBoundary(*CurPtr)) {
+      string(Result);
+      return;
+  } 
+  switch (*CurPtr)
+  {
+  case '+':
+      formToken(Result, CurPtr+1, tok::plus);
+      break;
+  case '-':
+      formToken(Result, CurPtr+1, tok::minus);
+      break;
+  case '*':
+      formToken(Result, CurPtr+1, tok::star);
+      break;
+  case '.':
+      formToken(Result, CurPtr+1, tok::period);
+      break;
+  case ',':
+      formToken(Result, CurPtr+1, tok::comma);
+      break;
+  case ';':
+      formToken(Result, CurPtr+1, tok::semi);
+      break;
+  case '=':
+      formToken(Result, CurPtr+1, tok::equal);
+      break;
+  case '#':
+      
+      formToken(Result, CurPtr+1, tok::hash);
+      break;
+  case ')':
+      formToken(Result, CurPtr+1, tok::r_paren);
+      break;
+  // the following will look forward 2 charactors
+  case '/':
+    if (*(CurPtr+1) == '/') {
+      while(*CurPtr != '\n') CurPtr++;
+      next(Result);
+    } else {
+      formToken(Result, CurPtr+1, tok::slash);
     }
-    if (charinfo::isIdentifierHead(*CurPtr)) {
-        identifierOrKeyword(Result);
-        return;
-    } 
-    if (charinfo::isStringBoundary(*CurPtr)) {
-        string(Result);
-        return;
-    } 
-    switch (*CurPtr)
-    {
-    case '+':
-        formToken(Result, CurPtr+1, tok::plus);
-        break;
-    case '-':
-        formToken(Result, CurPtr+1, tok::minus);
-        break;
-    case '*':
-        formToken(Result, CurPtr+1, tok::star);
-        break;
-    case '/':
-        formToken(Result, CurPtr+1, tok::slash);
-        break;
-    case '.':
-        formToken(Result, CurPtr+1, tok::period);
-        break;
-    case ',':
-        formToken(Result, CurPtr+1, tok::comma);
-        break;
-    case ';':
-        formToken(Result, CurPtr+1, tok::semi);
-        break;
-    case '=':
-        formToken(Result, CurPtr+1, tok::equal);
-        break;
-    case '#':
-        while(*CurPtr != '\n') {
-            CurPtr++;
-        }
-        next(Result);
-        // formToken(Result, CurPtr+1, tok::hash);
-        break;
-    case ')':
-        formToken(Result, CurPtr+1, tok::r_paren);
-        break;
-    // the following will look forward 2 charactors
-    case ':':
-        if (*(CurPtr+1) == '=') {
-            formToken(Result, CurPtr+2, tok::colonequal);
-        } else  {
-            formToken(Result, CurPtr+1, tok::colon);
-        }
-        break;
-    case '<':
-        if (*(CurPtr+1) == '=') {
-            formToken(Result, CurPtr+2, tok::lessequal);
-        } else  {
-            formToken(Result, CurPtr+1, tok::less);
-        }
-        break;
-    case '>':
-        if (*(CurPtr+1) == '=') {
-            formToken(Result, CurPtr+2, tok::greaterequal);
-        } else  {
-            formToken(Result, CurPtr+1, tok::greater);
-        }
-        break;
-    case '(':
-        if (*(CurPtr+1) == '*') {
-            comment();
-        } else {
-            formToken(Result, CurPtr+1, tok::l_paren);
-        }
-        break;
-    default:
-        Diags.report(getLoc(), diag::DIAG_ID::err_unknow_token);
-        while(*CurPtr != '\0' && !charinfo::isVerticalWhitespace(*CurPtr)) {
-            CurPtr++;
-        }
-        Result.setKind(tok::TokenKind::unknown);
-        break;
-    }
+    break;
+  case ':':
+      if (*(CurPtr+1) == '=') {
+          formToken(Result, CurPtr+2, tok::colonequal);
+      } else  {
+          formToken(Result, CurPtr+1, tok::colon);
+      }
+      break;
+  case '<':
+      if (*(CurPtr+1) == '=') {
+          formToken(Result, CurPtr+2, tok::lessequal);
+      } else  {
+          formToken(Result, CurPtr+1, tok::less);
+      }
+      break;
+  case '>':
+      if (*(CurPtr+1) == '=') {
+          formToken(Result, CurPtr+2, tok::greaterequal);
+      } else  {
+          formToken(Result, CurPtr+1, tok::greater);
+      }
+      break;
+  case '(':
+      if (*(CurPtr+1) == '*') {
+          comment();
+      } else {
+          formToken(Result, CurPtr+1, tok::l_paren);
+      }
+      break;
+  default:
+      Diags.report(getLoc(), diag::DIAG_ID::err_unknow_token);
+      while(*CurPtr != '\0' && !charinfo::isVerticalWhitespace(*CurPtr)) {
+          CurPtr++;
+      }
+      Result.setKind(tok::TokenKind::unknown);
+      break;
+  }
 }
 
 void tinylang::Lexer::identifierOrKeyword(Token &Result)

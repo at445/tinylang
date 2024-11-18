@@ -189,6 +189,18 @@ bool Sema::actOnVariableDeclarationPart(DeclList &decls, const IdentList &idents
     Diags.report(lstLoc, diag::err_vardecl_requires_type);
     return false;
 }
+bool Sema::actOnProduceDeclarationPart(DeclList &decls, const SMLoc &loc, StringRef name, ProcudureDeclaration *& decl)
+{
+    assert(CurrentScope && "current scope should be defined");
+    decl = new ProcudureDeclaration(getCurrentDecl(), loc, name);
+
+    if (!CurrentScope->insert(decl)) {
+      Diags.report(loc, diag::err_symbold_declared, name);
+      return false;
+    }
+    decls.push_back(decl);
+    return true;
+}
 bool Sema::actOnConstantDecl(DeclList& decls, SMLoc Loc, StringRef Name, Expr *E)
 {
     assert(CurrentScope && "current scope should be defined");
@@ -224,4 +236,34 @@ bool Sema::actOnAccess(SMLoc Loc, StringRef Name, Expr *&E) {
             E = new ConstantAccess(V);
     }
     return true;
+}
+
+bool Sema::actOnAssignment(SMLoc Loc, StringRef Name, Expr *p, StmtList &Stmts) {
+  Expr * E = nullptr;
+  if (!actOnAccess(Loc, Name, E)) return false;
+  auto *V = dyn_cast<VariableAccess>(E);
+  if (!V) {
+    Diags.report(Loc, diag::err_undeclared_name, Name);
+    return false;
+  } 
+  Stmts.push_back(new AssignStatement(V, p));
+  return true;
+}
+
+bool Sema::actOnFunctionCall(SMLoc Loc, StringRef Name, const ExprList &p, StmtList &Stmts)
+{
+  assert(CurrentScope && "current scope should be defined");
+  auto decl = CurrentScope->lookup(Name);
+  if (!decl) {
+      Diags.report(Loc, diag::err_undeclared_name, Name);
+      return false;
+  }
+  ProcudureAccess *E = nullptr;
+  if (auto *V = dyn_cast<ProcudureDeclaration>(decl)) {
+    E = new ProcudureAccess(V);
+  }
+  ProcedureCall *stmt = new ProcedureCall(E);
+  stmt->setActualParas(p);
+  Stmts.push_back(stmt);
+  return true;
 }

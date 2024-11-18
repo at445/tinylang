@@ -151,12 +151,6 @@ namespace tinylang {
     FormalParamList FormalPara;
     DeclList Decls;
     StmtList Stmts;
-  private:
-    void removeLastNCharacters(std::string &inputString, size_t n = 2) {
-      if (inputString.length() >= n) {
-          inputString = inputString.substr(0, inputString.length() - n);
-      }
-    }
   public:
     ProcudureDeclaration(Decl *EnclosingDecL, SMLoc Loc, StringRef Name)
       :Decl(DK_Proc, EnclosingDecL, Loc, Name) {}
@@ -195,6 +189,7 @@ namespace tinylang {
       return D->getKind() == DK_Proc;
     }
     virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+      rawStream << "\n";
       Decl::print(rawStream, tabNumber);
       rawStream << "PROCEDURE " <<  Name << "( ";
       for (const auto& para: FormalPara) {
@@ -213,7 +208,7 @@ namespace tinylang {
          stmt->print(rawStream, tabNumber + 1);
       }
       Decl::print(rawStream, tabNumber);
-      rawStream << "END;\n";
+      rawStream << "END;\n\n";
     }
   };
   
@@ -352,6 +347,21 @@ namespace tinylang {
       rawStream << Const->getName();
     }
   };
+  class ProcudureAccess : public Expr {
+    ProcudureDeclaration * m_procudure;
+  public:
+    ProcudureAccess(ProcudureDeclaration * proc)
+      : Expr(EK_Func, proc->getReturnType(), false),
+        m_procudure(proc) {}
+    ProcudureDeclaration *geDecl() { return m_procudure; }    
+    static bool classof(const Expr *E) {
+      return E->getKind() == EK_Func;
+    }
+
+    virtual void print(llvm::raw_ostream & rawStream) override {
+      rawStream << m_procudure->getName();
+    }
+  };
   class ReturnStatement : public Stmt {
    Expr * m_expr;
    public:
@@ -437,5 +447,67 @@ namespace tinylang {
          sourceExpr->print(rawStream);
          rawStream << ";\n";
       }
+  };
+  class WhileStatement : public Stmt {
+   Expr * m_expr;
+   StmtList m_stmts;
+   public:
+      WhileStatement(Expr * expr)
+      :  Stmt(SK_While),
+         m_expr(expr){}
+      Expr * getExpr() const {
+         return m_expr;
+      }
+      void setStmts(const StmtList& stmts) {
+         m_stmts = std::move(stmts);
+      }
+      const StmtList& getStmts() {
+         return m_stmts;
+      }
+      static bool classof(const Stmt *E) {
+         return E->getKind() == SK_While;
+      }
+      virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+         Stmt::print(rawStream, tabNumber);
+         rawStream << "WHILE ";
+         m_expr->print(rawStream);
+         rawStream << " DO\n";
+         for (const auto& stmt: m_stmts) {
+            stmt->print(rawStream, tabNumber+1);
+         }
+         Stmt::print(rawStream, tabNumber);
+         rawStream << "END\n";
+      }
+  };
+  class ProcedureCall : public Stmt {
+   ProcudureAccess* m_procedure;
+   ExprList m_actualParameters;
+  public:
+   ProcedureCall(ProcudureAccess* proc) 
+   : Stmt(SK_ProcCall),
+     m_procedure(proc){}
+
+   const ExprList& getActualParas() {
+      return m_actualParameters;
+   }
+   void setActualParas(const ExprList& paras) {
+      m_actualParameters = std::move(paras);
+   }
+   static bool classof(const Stmt *E) {
+      return E->getKind() == SK_ProcCall;
+   }
+   virtual void print(llvm::raw_ostream & rawStream, int tabNumber) override {
+      Stmt::print(rawStream, tabNumber);
+      m_procedure->print(rawStream);
+      rawStream << "( ";
+
+      for (size_t i = 0; i < m_actualParameters.size() - 1; i++)
+      {
+         m_actualParameters[i]->print(rawStream);
+         rawStream << ", ";
+      }
+      m_actualParameters.back()->print(rawStream);
+      rawStream << " )\n";
+   }
   };
 }
