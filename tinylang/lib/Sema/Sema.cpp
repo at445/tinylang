@@ -118,7 +118,7 @@ Expr * Sema::actOnSimpleExpr(Expr *lExpr, Expr *rExpr, OperatorInfo &op)
     if ((lExpr->getType() != rExpr->getType()) ||
         (!isOperatorForType(op.getKind(), lExpr->getType()))) {
         Diags.report(op.getLocation(), diag::err_types_for_operator_not_compatible);
-        return false;
+        return nullptr;
     }
     bool isConst = lExpr->isConst() && rExpr->isConst();
     return new InfixExpression(lExpr, rExpr, std::move(op), lExpr->getType(), isConst);
